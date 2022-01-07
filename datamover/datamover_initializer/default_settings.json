@@ -1,0 +1,50 @@
+{
+  "path_jobs": "./jobs",
+  "postman": {
+    "sms": {
+      "enabled": false,
+      "auto-short-url": false,
+      "providers": {
+        "default": {
+          "driver": "generic",
+          "method": "GET",
+          "endpoint": "https://api.smshosting.it/rest/api/smart/sms/send?authKey={{auth-key}}&authSecret={{auth-secret}}&text={{message}}&to={{to}}&from={{from}}",
+          "params": {
+            "auth-key": "xxxx",
+            "auth-secret": "xxxxxx",
+            "message": "",
+            "to": "",
+            "from": "TEST-SRV"
+          },
+          "headers": {}
+        }
+      }
+    },
+    "email": {
+      "send": {
+        "enabled": true,
+        "secure": false,
+        "host": "smtp.mailtrap.io",
+        "port": 2525,
+        "from": "Marco Rossi <marco@rossi.it>",
+        "auth": {
+          "user": "xxxx",
+          "pass": "xxxx"
+        }
+      },
+      "read": {
+        "enabled": true,
+        "remove_unhandled_messages": false,
+        "attendee_email": "angelo.geminiani@gmail.com",
+        "type": "imap",
+        "host": "imap.domain.com",
+        "port": 993,
+        "tls": false,
+        "auth": {
+          "user": "xxx",
+          "pass": "xxxx"
+        }
+      }
+    }
+  }
+}
