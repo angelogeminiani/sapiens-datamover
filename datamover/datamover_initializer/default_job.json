@@ -1,0 +1,25 @@
+{
+  "schedule": {
+    "start_at": "",
+    "timeline": "second:3"
+  },
+  "next_run": "",
+  "action": {
+    "source": {
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./source.db"
+      },
+      "command": "SELECT * FROM users",
+      "script": ""
+    },
+    "target": {
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./target.db"
+      },
+      "command": "INSERT INTO users VALUES (...)",
+      "script": ""
+    }
+  }
+}

@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_events"
 	"bitbucket.org/digi-sense/gg-core/gg_scheduler"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action"
 	"path"
 )
 
@@ -17,6 +18,7 @@ type DataMoverJob struct {
 	name      string
 	settings  *datamover_commons.DataMoverSettingsJob
 	scheduler *gg_scheduler.Scheduler
+	action    *action.DataMoverAction
 }
 
 func NewDataMoverJob(root string, events *gg_events.Emitter) (instance *DataMoverJob, err error) {
@@ -89,6 +91,9 @@ func (instance *DataMoverJob) init() error {
 	// scheduler
 	_ = instance.initScheduler()
 
+	// action
+	instance.initAction()
+
 	return nil
 }
 
@@ -114,6 +119,13 @@ func (instance *DataMoverJob) initScheduler() bool {
 		return true
 	}
 	return false
+}
+
+func (instance *DataMoverJob) initAction() {
+	if nil != instance && nil != instance.settings {
+		instance.action = action.NewDataMoverAction(instance.root, instance.logger,
+			instance.events, instance.settings.Action)
+	}
 }
 
 func (instance *DataMoverJob) run() error {

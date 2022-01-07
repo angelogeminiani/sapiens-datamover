@@ -6,6 +6,11 @@ import (
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"flag"
+	_ "gorm.io/driver/mysql"
+	_ "gorm.io/driver/postgres"
+	_ "gorm.io/driver/sqlite"
+	_ "gorm.io/driver/sqlserver"
+	_ "gorm.io/gorm"
 	"log"
 	"os"
 )
