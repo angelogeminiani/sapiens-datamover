@@ -15,7 +15,7 @@ Data Mover features are:
 
 Data Mover hosts "jobs".
 
-A "Job" is basically a JSON file describing what Data Move should do at a predefined time.
+A "Job" is basically a JSON file describing what Data Mover should do at a predefined time.
 
 Each "job" contains:
 - Schedule: optional data to define WHEN the job must start
