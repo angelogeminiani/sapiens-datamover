@@ -15,10 +15,10 @@ type DataMoverJob struct {
 	logger *gg_log.Logger
 	events *gg_events.Emitter
 
-	name      string
-	settings  *datamover_commons.DataMoverSettingsJob
-	scheduler *gg_scheduler.Scheduler
-	action    *action.DataMoverAction
+	name        string
+	settings    *datamover_commons.DataMoverSettingsJob
+	scheduler   *gg_scheduler.Scheduler
+	transaction *action.DataMoverTransaction
 }
 
 func NewDataMoverJob(root string, events *gg_events.Emitter) (instance *DataMoverJob, err error) {
@@ -58,9 +58,9 @@ func (instance *DataMoverJob) Stop() (err error) {
 	return
 }
 
-func (instance *DataMoverJob) Run() (err error) {
+func (instance *DataMoverJob) Run(context []map[string]interface{}) (err error) {
 	if nil != instance {
-		err = instance.run()
+		err = instance.run(context)
 	}
 	return
 }
@@ -114,7 +114,10 @@ func (instance *DataMoverJob) initScheduler() bool {
 		instance.scheduler.OnSchedule(func(schedule *gg_scheduler.SchedulerTask) {
 			instance.scheduler.Pause()
 			defer instance.scheduler.Resume()
-			_ = instance.run()
+			err := instance.run(nil)
+			if nil != err {
+				instance.logger.Error(err)
+			}
 		})
 		return true
 	}
@@ -123,18 +126,23 @@ func (instance *DataMoverJob) initScheduler() bool {
 
 func (instance *DataMoverJob) initAction() {
 	if nil != instance && nil != instance.settings {
-		instance.action = action.NewDataMoverAction(instance.root, instance.logger,
-			instance.events, instance.settings.Action)
+		instance.transaction = action.NewDataMoverTransaction(instance.root, instance.logger,
+			instance.events, instance.settings.Transaction)
 	}
 }
 
-func (instance *DataMoverJob) run() error {
-	if nil != instance {
+func (instance *DataMoverJob) run(context []map[string]interface{}) error {
+	if nil != instance && nil != instance.transaction {
+
 		// execute current job
+		response, err := instance.transaction.Execute(context)
+		if nil != err {
+			return err
+		}
 
 		// run next
 		if len(instance.settings.NextRun) > 0 {
-			instance.events.Emit(datamover_commons.EventOnNextJobRun, instance.settings.NextRun, instance)
+			instance.events.Emit(datamover_commons.EventOnNextJobRun, instance.settings.NextRun, instance, response)
 		}
 	}
 	return nil

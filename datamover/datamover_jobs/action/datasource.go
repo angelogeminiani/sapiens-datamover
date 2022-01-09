@@ -3,6 +3,7 @@ package action
 import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action/schema"
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -12,16 +13,22 @@ import (
 )
 
 type DataMoverDatasource struct {
-	name     string
+	root     string
 	settings *datamover_commons.DataMoverDatasourceSettings
 
-	_db *gorm.DB
+	_db    *gorm.DB
+	schema *schema.DataMoverDatasourceSchema
 }
 
-func NewDataMoverDatasource(name string, settings *datamover_commons.DataMoverDatasourceSettings) *DataMoverDatasource {
+func NewDataMoverDatasource(root string, datasource *datamover_commons.DataMoverDatasourceSettings) *DataMoverDatasource {
 	instance := new(DataMoverDatasource)
-	instance.name = name
-	instance.settings = settings
+	instance.root = root
+	instance.settings = datasource
+	if nil != datasource.Connection {
+		instance.schema = datasource.Connection.Schema
+	}
+
+	_ = instance.init()
 
 	return instance
 }
@@ -30,38 +37,96 @@ func NewDataMoverDatasource(name string, settings *datamover_commons.DataMoverDa
 //	p u b l i c
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *DataMoverDatasource) GetData() (interface{}, error) {
-	command := instance.settings.Command
-	script := instance.settings.Script
+func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, command string) ([]map[string]interface{}, error) {
+	result := make([]map[string]interface{}, 0)
+
 	db, err := instance.connection()
 	if nil != err {
+		// query error
+		err = gg.Errors.Prefix(err, fmt.Sprintf("Error opening database '%s': ",
+			instance.settings.Connection.Dsn))
 		return nil, err
 	}
 
-	if len(command) > 0 {
-		tx := db.Raw(command)
-		if nil != tx.Error && !IsRecordNotFoundError(tx.Error) {
-			// query error
-			err = gg.Errors.Prefix(err, fmt.Sprintf("Error running command '%s': ", command))
+	if nil == context {
+		result, err = query(db, command, nil)
+		if nil != err {
 			return nil, err
 		}
-		if tx.RowsAffected > 0 {
-
-		} else {
-			// empty data
-
+	} else {
+		for _, data := range context {
+			statement := ToSQLStatement(command, data)
+			r, e := query(db, statement, data)
+			if nil != e {
+				return nil, e
+			}
+			if len(r) == 0 {
+				result = append(result, data)
+			} else {
+				result = append(result, r...)
+			}
 		}
 	}
-
-	if len(script) > 0 {
-
-	}
-	return nil, nil
+	return result, nil
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 //	p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
+func (instance *DataMoverDatasource) init() error {
+	if nil != instance {
+		db, err := instance.connection()
+		if nil != err {
+			return err
+		}
+		if nil == instance.schema {
+			// AUTO-CREATE SCHEMA
+			instance.schema = schema.NewSchema()
+			tbls, err := db.Migrator().GetTables()
+			if nil != err {
+				return err
+			}
+			for _, tbl := range tbls {
+				tx := db.Table(tbl)
+				s := &struct{}{}
+				cols, e := tx.Migrator().ColumnTypes(&s)
+				if nil != e {
+					return e
+				}
+				// add table to schema
+				table := schema.NewTable()
+				table.Name = tbl
+				for _, col := range cols {
+					column := &schema.DataMoverDatasourceSchemaColumn{
+						Name: col.Name(),
+					}
+					column.Nullable, _ = col.Nullable()
+					column.Type = col.DatabaseTypeName()
+					table.Columns = append(table.Columns, column)
+				}
+				instance.schema.Tables = append(instance.schema.Tables, table)
+				// fmt.Println(table)
+			}
+		} else {
+			// AUTO-MIGRATE SCHEMA
+			tables := instance.schema.Tables
+			for _, table := range tables {
+				if !db.Migrator().HasTable(table.Name) {
+					tx := db.Raw("CREATE TABLE ?", table.Name)
+					if nil != tx.Error {
+						return tx.Error
+					}
+				}
+				s := table.Struct()
+				e := db.Table(table.Name).Migrator().AutoMigrate(s)
+				if nil != e {
+					return e
+				}
+			}
+		}
+	}
+	return nil
+}
 
 func (instance *DataMoverDatasource) connection() (*gorm.DB, error) {
 	var err error
@@ -71,7 +136,8 @@ func (instance *DataMoverDatasource) connection() (*gorm.DB, error) {
 		dsn := instance.settings.Connection.Dsn
 		switch driver {
 		case "sqlite":
-			db, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+			filename := gg.Paths.Concat(instance.root, dsn)
+			db, err = gorm.Open(sqlite.Open(filename), &gorm.Config{})
 		case "mysql":
 			// "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
 			db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})

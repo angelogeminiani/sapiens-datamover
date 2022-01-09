@@ -4,8 +4,10 @@
     "timeline": "second:3"
   },
   "next_run": "",
-  "action": {
-    "source": {
+  "transaction": [
+    {
+      "uid": "source",
+      "description": "select data from source",
       "connection": {
         "driver": "sqlite",
         "dsn": "./source.db"
@@ -13,13 +15,25 @@
       "command": "SELECT * FROM users",
       "script": ""
     },
-    "target": {
+    {
+      "uid": "target",
+      "description": "save source to target",
       "connection": {
         "driver": "sqlite",
         "dsn": "./target.db"
       },
+      "command": "INSERT INTO users (...)",
+      "script": ""
+    },
+    {
+      "uid": "source-update",
+      "description": "write flag in source",
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./source.db"
+      },
       "command": "INSERT INTO users VALUES (...)",
       "script": ""
     }
-  }
+  ]
 }

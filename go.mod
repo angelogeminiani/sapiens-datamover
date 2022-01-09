@@ -3,8 +3,8 @@ module bitbucket.org/digi-sense/gg-progr-datamover
 go 1.16
 
 require (
-	bitbucket.org/digi-sense/gg-core v0.1.29
-	bitbucket.org/digi-sense/gg-core-x v0.1.29
+	bitbucket.org/digi-sense/gg-core v0.1.31
+	bitbucket.org/digi-sense/gg-core-x v0.1.31
 	github.com/jackc/pgx/v4 v4.14.1 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/mattn/go-sqlite3 v1.14.10 // indirect
