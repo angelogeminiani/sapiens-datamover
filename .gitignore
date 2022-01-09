@@ -36,8 +36,7 @@ TEST*.xml
 Thumbs.db
 
 # Applications
-*.app
-*.exe
+# *.app
 *.war
 
 # Large media files

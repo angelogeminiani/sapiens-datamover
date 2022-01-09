@@ -9,16 +9,18 @@ import (
 )
 
 type DataMoverJobsController struct {
-	root   string
-	logger *datamover_commons.Logger
-	events *gg_events.Emitter
+	isDebug bool
+	root    string
+	logger  *datamover_commons.Logger
+	events  *gg_events.Emitter
 
 	closed bool
 	jobs   []*DataMoverJob
 }
 
-func NewDataMoverJobsController(root string, logger *datamover_commons.Logger, events *gg_events.Emitter) (instance *DataMoverJobsController, err error) {
+func NewDataMoverJobsController(debug bool, root string, logger *datamover_commons.Logger, events *gg_events.Emitter) (instance *DataMoverJobsController, err error) {
 	instance = new(DataMoverJobsController)
+	instance.isDebug = debug
 	instance.root = gg.Paths.WorkspacePath(root)
 	instance.logger = logger
 	instance.events = events
@@ -89,7 +91,7 @@ func (instance *DataMoverJobsController) init() (err error) {
 	dirs, err = gg.Paths.ListDir(instance.root)
 	if nil == err {
 		for _, dir := range dirs {
-			job, jerr := NewDataMoverJob(dir, instance.events)
+			job, jerr := NewDataMoverJob(instance.isDebug, dir, instance.events)
 			if nil == jerr {
 				instance.jobs = append(instance.jobs, job)
 			} else {

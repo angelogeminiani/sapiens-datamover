@@ -2,6 +2,7 @@ package action
 
 import (
 	"bitbucket.org/digi-sense/gg-core"
+	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action/schema"
 	"fmt"
@@ -13,16 +14,18 @@ import (
 )
 
 type DataMoverDatasource struct {
-	root     string
-	settings *datamover_commons.DataMoverDatasourceSettings
+	root        string
+	settings    *datamover_commons.DataMoverDatasourceSettings
+	fnVarEngine *gg_fnvars.FnVarsEngine
 
 	_db    *gorm.DB
 	schema *schema.DataMoverDatasourceSchema
 }
 
-func NewDataMoverDatasource(root string, datasource *datamover_commons.DataMoverDatasourceSettings) *DataMoverDatasource {
+func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine, datasource *datamover_commons.DataMoverDatasourceSettings) *DataMoverDatasource {
 	instance := new(DataMoverDatasource)
 	instance.root = root
+	instance.fnVarEngine = fnVarEngine
 	instance.settings = datasource
 	if nil != datasource.Connection {
 		instance.schema = datasource.Connection.Schema
@@ -49,12 +52,22 @@ func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, c
 	}
 
 	if nil == context {
+		// solve fnvars
+		fnRes, fnErr := instance.fnVarEngine.SolveText(command)
+		if nil == fnErr {
+			command = fnRes
+		}
 		result, err = query(db, command, nil)
 		if nil != err {
 			return nil, err
 		}
 	} else {
 		for _, data := range context {
+			// solve fnvars
+			fnRes, fnErr := instance.fnVarEngine.SolveText(command, data)
+			if nil == fnErr {
+				command = fnRes
+			}
 			statement := ToSQLStatement(command, data)
 			r, e := query(db, statement, data)
 			if nil != e {
@@ -73,6 +86,8 @@ func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, c
 // ---------------------------------------------------------------------------------------------------------------------
 //	p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
+
+// initialize the schema
 func (instance *DataMoverDatasource) init() error {
 	if nil != instance {
 		db, err := instance.connection()
@@ -128,6 +143,7 @@ func (instance *DataMoverDatasource) init() error {
 	return nil
 }
 
+// retrieve a connection
 func (instance *DataMoverDatasource) connection() (*gorm.DB, error) {
 	var err error
 	var db *gorm.DB
@@ -147,6 +163,10 @@ func (instance *DataMoverDatasource) connection() (*gorm.DB, error) {
 		case "sqlserver":
 			// "sqlserver://gorm:LoremIpsum86@localhost:9930?database=gorm"
 			db, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
+		default:
+			db = nil
+			err = gg.Errors.Prefix(datamover_commons.DatabaseNotSupportedError,
+				fmt.Sprintf("'%s': ", driver))
 		}
 		if nil == err {
 			instance._db = db

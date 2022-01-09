@@ -7,13 +7,15 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_scheduler"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action"
+	"fmt"
 	"path"
 )
 
 type DataMoverJob struct {
-	root   string
-	logger *gg_log.Logger
-	events *gg_events.Emitter
+	isDebug bool
+	root    string
+	logger  *gg_log.Logger
+	events  *gg_events.Emitter
 
 	name        string
 	settings    *datamover_commons.DataMoverSettingsJob
@@ -21,13 +23,18 @@ type DataMoverJob struct {
 	transaction *action.DataMoverTransaction
 }
 
-func NewDataMoverJob(root string, events *gg_events.Emitter) (instance *DataMoverJob, err error) {
+func NewDataMoverJob(debug bool, root string, events *gg_events.Emitter) (instance *DataMoverJob, err error) {
 	instance = new(DataMoverJob)
+	instance.isDebug = debug
 	instance.root = root
 	instance.events = events
 
 	err = instance.init()
-
+	if nil == err {
+		instance.logger.Info(fmt.Sprintf("'%s' IS READY!", instance.name))
+	} else {
+		instance.logger.Info(fmt.Sprintf("'%s' EXIT WITH ERROR: ", err))
+	}
 	return
 }
 
@@ -77,6 +84,7 @@ func (instance *DataMoverJob) init() error {
 	_ = gg.IO.Remove(loggerfile)
 	instance.logger = gg_log.NewLogger()
 	instance.logger.SetFileName(loggerfile)
+	instance.logger.Info(fmt.Sprintf("INITIALIZING '%s'", instance.name))
 
 	// lookup settings
 	text, err := gg.IO.ReadTextFromFile(gg.Paths.Concat(instance.root, "job.json"))
@@ -88,11 +96,24 @@ func (instance *DataMoverJob) init() error {
 		return err
 	}
 
+	if instance.isDebug {
+		instance.logger.Info("* settings loaded.")
+	}
+
 	// scheduler
-	_ = instance.initScheduler()
+	if instance.initScheduler() {
+		if instance.isDebug {
+			instance.logger.Info("* scheduler enabled.")
+		}
+	} else {
+		instance.logger.Warn("* scheduler not enabled.")
+	}
 
 	// action
-	instance.initAction()
+	instance.initTransaction()
+	if instance.isDebug {
+		instance.logger.Info("* transaction initialized.")
+	}
 
 	return nil
 }
@@ -124,7 +145,7 @@ func (instance *DataMoverJob) initScheduler() bool {
 	return false
 }
 
-func (instance *DataMoverJob) initAction() {
+func (instance *DataMoverJob) initTransaction() {
 	if nil != instance && nil != instance.settings {
 		instance.transaction = action.NewDataMoverTransaction(instance.root, instance.logger,
 			instance.events, instance.settings.Transaction)

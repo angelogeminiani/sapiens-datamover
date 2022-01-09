@@ -37,6 +37,8 @@ const (
 // ---------------------------------------------------------------------------------------------------------------------
 
 var (
-	PanicSystemError       = errors.New("panic_system_error")
-	JobAlreadyRunningError = errors.New("job_already_running_error")
+	PanicSystemError                = errors.New("panic_system_error")
+	JobAlreadyRunningError          = errors.New("job_already_running_error")
+	DatabaseNotSupportedError       = errors.New("database_not_supported_error")
+	ActionInvalidConfigurationError = errors.New("action_invalid_configuration_error")
 )

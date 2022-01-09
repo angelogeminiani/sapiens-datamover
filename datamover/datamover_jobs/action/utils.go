@@ -71,7 +71,8 @@ func toSQLString(v interface{}) string {
 func query(db *gorm.DB, command string, context map[string]interface{}) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
 	args := make([]interface{}, 0)
-	// parse command
+
+	// parse command to get sql parameters
 	params := QueryGetParamNames(command)
 	if len(params) > 0 {
 		for _, param := range params {
@@ -81,6 +82,7 @@ func query(db *gorm.DB, command string, context map[string]interface{}) ([]map[s
 			}
 		}
 	}
+
 	tx := db.Raw(command, args...)
 	tx.Scan(&result)
 	if nil != tx.Error && !IsRecordNotFoundError(tx.Error) {

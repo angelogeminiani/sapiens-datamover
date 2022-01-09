@@ -1,6 +1,7 @@
 package action
 
 import (
+	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"gorm.io/gorm"
 )
@@ -12,13 +13,13 @@ type DataMoverAction struct {
 	datasource *DataMoverDatasource
 }
 
-func NewDataMoverAction(root string, datasourceSettings *datamover_commons.DataMoverDatasourceSettings) *DataMoverAction {
+func NewDataMoverAction(root string, fnVarEngine *gg_fnvars.FnVarsEngine, datasourceSettings *datamover_commons.DataMoverDatasourceSettings) *DataMoverAction {
 	instance := new(DataMoverAction)
 	instance.root = root
+
 	if nil != datasourceSettings {
 		instance.uid = datasourceSettings.Uid
-
-		instance.datasource = NewDataMoverDatasource(root, datasourceSettings)
+		instance.datasource = NewDataMoverDatasource(root, fnVarEngine, datasourceSettings)
 
 		_ = instance.init()
 	}
