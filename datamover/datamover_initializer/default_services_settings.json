@@ -1,0 +1,17 @@
+{
+  "enabled": false,
+  "authorization": {
+    "type": "basic",
+    "value": "MTIzOmFiYw=="
+  },
+  "services": [
+    {
+      "enabled": true,
+      "name": "NIO SERVER",
+      "protocol": "nio",
+      "protocol_configuration": {
+        "port": 10001
+      }
+    }
+  ]
+}

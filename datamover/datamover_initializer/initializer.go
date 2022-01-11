@@ -10,7 +10,10 @@ import (
 var DefaultSettings string
 
 //go:embed default_job.json
-var DefaultJobSettings string
+var DefaultSettingsJob string
+
+//go:embed default_services_settings.json
+var DefaultSettingsService string
 
 func Initialize(mode string) (err error) {
 	wpRoot := gg.Paths.WorkspacePath("./")
@@ -27,13 +30,21 @@ func Initialize(mode string) (err error) {
 		_, _ = gg.IO.WriteTextToFile(DefaultSettings, filename)
 	}
 
+	// settings net
+	filename = gg.Paths.Concat(wpRoot, fmt.Sprintf("services.%s.json", mode))
+	// ensure settings exists
+	_ = gg.Paths.Mkdir(filename)
+	if b, _ := gg.Paths.Exists(filename); !b {
+		_, _ = gg.IO.WriteTextToFile(DefaultSettingsService, filename)
+	}
+
 	return
 }
 
 func CreateJobSettings(dir string) (err error) {
 	filename := gg.Paths.Concat(dir, "job.json")
 	if b, _ := gg.Paths.Exists(filename); !b {
-		_, err = gg.IO.WriteTextToFile(DefaultJobSettings, filename)
+		_, err = gg.IO.WriteTextToFile(DefaultSettingsJob, filename)
 	}
 	return
 }

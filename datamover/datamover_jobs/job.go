@@ -17,10 +17,10 @@ type DataMoverJob struct {
 	logger  *gg_log.Logger
 	events  *gg_events.Emitter
 
-	name        string
-	settings    *datamover_commons.DataMoverSettingsJob
-	scheduler   *gg_scheduler.Scheduler
-	transaction *action.DataMoverTransaction
+	name         string
+	settings     *datamover_commons.DataMoverSettingsJob
+	scheduler    *gg_scheduler.Scheduler
+	_transaction *action.DataMoverTransaction
 }
 
 func NewDataMoverJob(debug bool, root string, events *gg_events.Emitter) (instance *DataMoverJob, err error) {
@@ -96,23 +96,21 @@ func (instance *DataMoverJob) init() error {
 		return err
 	}
 
-	if instance.isDebug {
-		instance.logger.Info("* settings loaded.")
-	}
-
-	// scheduler
-	if instance.initScheduler() {
+	if nil != instance.settings {
 		if instance.isDebug {
-			instance.logger.Info("* scheduler enabled.")
+			instance.logger.Info("* settings loaded.")
+		}
+
+		// scheduler
+		if instance.initScheduler() {
+			if instance.isDebug {
+				instance.logger.Info("* scheduler enabled.")
+			}
+		} else {
+			instance.logger.Warn("* scheduler not enabled.")
 		}
 	} else {
-		instance.logger.Warn("* scheduler not enabled.")
-	}
-
-	// action
-	instance.initTransaction()
-	if instance.isDebug {
-		instance.logger.Info("* transaction initialized.")
+		instance.logger.Warn("* SETTINGS ARE NOT VALID!")
 	}
 
 	return nil
@@ -145,25 +143,37 @@ func (instance *DataMoverJob) initScheduler() bool {
 	return false
 }
 
-func (instance *DataMoverJob) initTransaction() {
-	if nil != instance && nil != instance.settings {
-		instance.transaction = action.NewDataMoverTransaction(instance.root, instance.logger,
-			instance.events, instance.settings.Transaction)
+func (instance *DataMoverJob) transaction() (*action.DataMoverTransaction, error) {
+	if nil == instance._transaction {
+		if nil != instance.settings {
+			instance._transaction = action.NewDataMoverTransaction(instance.root, instance.logger,
+				instance.events, instance.settings.Transaction)
+		} else {
+			return nil, gg.Errors.Prefix(datamover_commons.PanicSystemError,
+				fmt.Sprintf("Misconfiguration in JOB '%s' settings", instance.name))
+		}
 	}
+	return instance._transaction, nil
 }
 
 func (instance *DataMoverJob) run(context []map[string]interface{}) error {
-	if nil != instance && nil != instance.transaction {
-
-		// execute current job
-		response, err := instance.transaction.Execute(context)
+	if nil != instance {
+		transaction, err := instance.transaction()
 		if nil != err {
 			return err
 		}
 
-		// run next
-		if len(instance.settings.NextRun) > 0 {
-			instance.events.Emit(datamover_commons.EventOnNextJobRun, instance.settings.NextRun, instance, response)
+		if nil != transaction {
+			// execute current job
+			response, err := transaction.Execute(context)
+			if nil != err {
+				return err
+			}
+
+			// run next
+			if len(instance.settings.NextRun) > 0 {
+				instance.events.Emit(datamover_commons.EventOnNextJobRun, instance.settings.NextRun, instance, response)
+			}
 		}
 	}
 	return nil

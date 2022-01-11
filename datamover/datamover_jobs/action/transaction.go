@@ -13,13 +13,13 @@ type DataMoverTransaction struct {
 	root     string
 	logger   *gg_log.Logger
 	events   *gg_events.Emitter
-	settings []*datamover_commons.DataMoverDatasourceSettings
+	settings []*datamover_commons.DataMoverActionSettings
 
 	fnVarEngine *gg_fnvars.FnVarsEngine
 	transaction []*DataMoverAction
 }
 
-func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, settings []*datamover_commons.DataMoverDatasourceSettings) *DataMoverTransaction {
+func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, settings []*datamover_commons.DataMoverActionSettings) *DataMoverTransaction {
 	instance := new(DataMoverTransaction)
 	instance.root = root
 	instance.logger = logger

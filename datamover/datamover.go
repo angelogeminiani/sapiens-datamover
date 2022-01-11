@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_initializer"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_postman"
 	"fmt"
 	"path/filepath"
@@ -25,6 +26,7 @@ type DataMover struct {
 
 	jobs    *datamover_jobs.DataMoverJobsController
 	postman *datamover_postman.DataMoverPostman
+	network *datamover_network.DataMoverNetworkController
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -39,6 +41,10 @@ func (instance *DataMover) Start() (err error) {
 
 	if nil != instance.postman {
 		_ = instance.postman.Start()
+	}
+
+	if nil != instance.network {
+		_ = instance.network.Start()
 	}
 
 	if nil != instance.jobs {
@@ -60,6 +66,10 @@ func (instance *DataMover) Stop() (err error) {
 
 	if nil != instance.jobs {
 		_ = instance.jobs.Stop()
+	}
+
+	if nil != instance.network {
+		_ = instance.network.Stop()
 	}
 
 	time.Sleep(3 * time.Second)
@@ -135,6 +145,13 @@ func LaunchApplication(mode, cmdStop string, args ...interface{}) (instance *Dat
 		// JOBS
 		instance.jobs, err = datamover_jobs.NewDataMoverJobsController(
 			mode == "debug", instance.settings.PathJobs,
+			instance.logger, instance.events)
+		if nil != err {
+			goto exit
+		}
+
+		// NETWORK SERVICES
+		instance.network, err = datamover_network.NewDataMoverNetworkController(mode,
 			instance.logger, instance.events)
 		if nil != err {
 			goto exit

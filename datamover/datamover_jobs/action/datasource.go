@@ -14,21 +14,23 @@ import (
 )
 
 type DataMoverDatasource struct {
-	root        string
-	settings    *datamover_commons.DataMoverDatasourceSettings
-	fnVarEngine *gg_fnvars.FnVarsEngine
+	root               string
+	connectionSettings *datamover_commons.DataMoverConnectionSettings
+	script             string
+	fnVarEngine        *gg_fnvars.FnVarsEngine
 
 	_db    *gorm.DB
 	schema *schema.DataMoverDatasourceSchema
 }
 
-func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine, datasource *datamover_commons.DataMoverDatasourceSettings) *DataMoverDatasource {
+func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine, connection *datamover_commons.DataMoverConnectionSettings, script string) *DataMoverDatasource {
 	instance := new(DataMoverDatasource)
 	instance.root = root
 	instance.fnVarEngine = fnVarEngine
-	instance.settings = datasource
-	if nil != datasource.Connection {
-		instance.schema = datasource.Connection.Schema
+	instance.script = script
+	instance.connectionSettings = connection
+	if nil != instance.connectionSettings {
+		instance.schema = instance.connectionSettings.Schema
 	}
 
 	_ = instance.init()
@@ -47,7 +49,7 @@ func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, c
 	if nil != err {
 		// query error
 		err = gg.Errors.Prefix(err, fmt.Sprintf("Error opening database '%s': ",
-			instance.settings.Connection.Dsn))
+			instance.connectionSettings.Dsn))
 		return nil, err
 	}
 
@@ -87,56 +89,65 @@ func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, c
 //	p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
 
-// initialize the schema
+// initialize the schema, network, etc...
 func (instance *DataMoverDatasource) init() error {
 	if nil != instance {
-		db, err := instance.connection()
+		err := instance.initSchema()
 		if nil != err {
 			return err
 		}
-		if nil == instance.schema {
-			// AUTO-CREATE SCHEMA
-			instance.schema = schema.NewSchema()
-			tbls, err := db.Migrator().GetTables()
-			if nil != err {
-				return err
+
+	}
+	return nil
+}
+
+func (instance *DataMoverDatasource) initSchema() error {
+	db, err := instance.connection()
+	if nil != err {
+		return err
+	}
+	if nil == instance.schema {
+		// AUTO-CREATE SCHEMA
+		instance.schema = schema.NewSchema()
+		tbls, err := db.Migrator().GetTables()
+		if nil != err {
+			return err
+		}
+		for _, tbl := range tbls {
+			tx := db.Table(tbl)
+			s := &struct{}{}
+			cols, e := tx.Migrator().ColumnTypes(&s)
+			if nil != e {
+				return e
 			}
-			for _, tbl := range tbls {
-				tx := db.Table(tbl)
-				s := &struct{}{}
-				cols, e := tx.Migrator().ColumnTypes(&s)
-				if nil != e {
-					return e
+			// add table to schema
+			table := schema.NewTable()
+			table.Name = tbl
+			for _, col := range cols {
+				column := &schema.DataMoverDatasourceSchemaColumn{
+					Name: col.Name(),
 				}
-				// add table to schema
-				table := schema.NewTable()
-				table.Name = tbl
-				for _, col := range cols {
-					column := &schema.DataMoverDatasourceSchemaColumn{
-						Name: col.Name(),
-					}
-					column.Nullable, _ = col.Nullable()
-					column.Type = col.DatabaseTypeName()
-					table.Columns = append(table.Columns, column)
-				}
-				instance.schema.Tables = append(instance.schema.Tables, table)
-				// fmt.Println(table)
+				column.Nullable, _ = col.Nullable()
+				column.Type = col.DatabaseTypeName()
+				table.Columns = append(table.Columns, column)
 			}
-		} else {
-			// AUTO-MIGRATE SCHEMA
-			tables := instance.schema.Tables
-			for _, table := range tables {
-				if !db.Migrator().HasTable(table.Name) {
-					tx := db.Raw("CREATE TABLE ?", table.Name)
-					if nil != tx.Error {
-						return tx.Error
-					}
+			instance.schema.Tables = append(instance.schema.Tables, table)
+			// fmt.Println(table)
+		}
+	} else {
+		// AUTO-MIGRATE SCHEMA
+		tables := instance.schema.Tables
+		for _, table := range tables {
+			if !db.Migrator().HasTable(table.Name) {
+				tx := db.Raw("CREATE TABLE ?", table.Name)
+				if nil != tx.Error {
+					return tx.Error
 				}
-				s := table.Struct()
-				e := db.Table(table.Name).Migrator().AutoMigrate(s)
-				if nil != e {
-					return e
-				}
+			}
+			s := table.Struct()
+			e := db.Table(table.Name).Migrator().AutoMigrate(s)
+			if nil != e {
+				return e
 			}
 		}
 	}
@@ -148,8 +159,8 @@ func (instance *DataMoverDatasource) connection() (*gorm.DB, error) {
 	var err error
 	var db *gorm.DB
 	if nil == instance._db {
-		driver := instance.settings.Connection.Driver
-		dsn := instance.settings.Connection.Dsn
+		driver := instance.connectionSettings.Driver
+		dsn := instance.connectionSettings.Dsn
 		switch driver {
 		case "sqlite":
 			filename := gg.Paths.Concat(instance.root, dsn)
