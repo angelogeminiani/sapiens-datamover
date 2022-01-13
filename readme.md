@@ -4,12 +4,52 @@
 Data Mover is an Open Source Data Migration tool.
 
 Data Mover features are:
-- **Multi database**: SQLite, SQL Server, MySQL/MariaDB, Postgres
-- **Auto Migrate Schema**: can migrate/update database schema
-- **Scheduler**: jobs can be scheduled and start every x time or just only once a day at the set time
-- **Move Data from Source to Target database**: this is Data Mover main feature 🐼
 
-## How does it work ##
+ - **Multi database**: SQLite, SQL Server, MySQL/MariaDB, Postgres
+ - **Auto Migrate Schema**: can migrate/update database schema
+ - **Scheduler**: jobs can be scheduled and start every x time or just only once a day at the set time
+ - **Move Data from Source to Target database**: this is Data Mover main feature 🐼
+
+## Quick Start ##
+
+### Introduction ###
+
+🐼 Data Mover works on a specific directory named "datamover_workspace" 
+(you can change the default name launching the executable with a parameter).
+
+When Data Mover starts, firs of all look for its workspace. If workspace is not found, Data Mover creates one using 
+the start path a workspace root.
+
+Below is a workspace directory example, named "_workspace".
+
+![](./_docs/workspace.png)
+
+---------------
+NOTE: this workspace folder contains also two sample databases, but this is only an example and your databases 
+can be placed anywhere.
+---------------
+
+### Launch the Panda  🐼 ###
+
+Data Mover support some commands and parameters.
+
+```shell
+# sample batch file to run executable
+datamover run -dir_work=./_workspace -m=production
+```
+
+COMMANDS:
+
+ - `run` : tell Data Mover you want run the entire program (more commands will come in future)
+
+PARAMETERS:
+
+ - `-dir_work`: path of workspace. Can be absolute or relative path
+ - `-m`: mode. Can be `debug` or `production`. The `debug` mode is useful if you need a verbose log.
+
+For binary files, please look [here](./_build).
+
+## How does Data Mover work ##
 
 ![](./_docs/slide_001.png)
 
@@ -18,8 +58,9 @@ Data Mover hosts "jobs".
 A "Job" is basically a JSON file describing what Data Mover should do at a predefined time.
 
 Each "job" contains:
-- Schedule: optional data to define WHEN the job must start
-- Transaction: an array of "Action" to define WHAT the job must do
+
+ - Schedule: optional data to define WHEN the job must start
+ - Transaction: an array of "Action" to define WHAT the job must do
 
 So, jobs define WHEN and WHAT about Data Mover.
 
@@ -40,8 +81,9 @@ Data Mover has an internal task manager and a scheduler working on a thread safe
 ```
 
 Is quite simple figure how Schedule works:
-- start_at: optional value representing hour and minute. ex: "10:20", "18:30", etc..
-- timeline: optional value representing a key-pair "unit:value". ex: "millisecond:100", "second:3", "minute:10", "hour:24".
+
+ - start_at: optional value representing hour and minute. ex: "10:20", "18:30", etc..
+ - timeline: optional value representing a key-pair "unit:value". ex: "millisecond:100", "second:3", "minute:10", "hour:24".
 
 Schedule is optional at all. If you do not specify any value, the job will not be scheduled, but remain a valid job that 
 can be invoked from another job (see below about "Job Chains").
@@ -156,8 +198,9 @@ So Data Mover's panda will start moving row after row into the context to the ta
 executing an INSERT statement for each source row.
 
 Reassuming:
-- First we selected some rows from a datasource
-- then we started a loop on each row and executed and INSERT into a target database. The insert command was auto-completed from the panda 🐼 of Data Mover that is able to understand a three-dot-statement 🌿.
+
+ - First we selected some rows from a datasource
+ - then we started a loop on each row and executed and INSERT into a target database. The insert command was auto-completed from the panda 🐼 of Data Mover that is able to understand a three-dot-statement 🌿.
 
 Now, to complete the transaction, we should need to mark all source data as exported.
 
@@ -172,7 +215,7 @@ And here comes our third action in Transaction:
     "dsn": "./source.db"
   },
   "command": "UPDATE users SET exported=true, exported_time='<var>date|iso</var>' WHERE id=@id",
-  "script": ""
+  "scripts": {}
 }
 ```
 
@@ -204,15 +247,150 @@ TODO: add schema migration specifications
 
 TODO: add Special Formulas documentation
 
+### Scripting ###
+
+Data Mover has an internal javascript engine.
+
+Let's take a look at configuration:
+
+```json
+{
+  "uid": "source-update",
+  "description": "write flag in source",
+  "connection": {
+    "driver": "sqlite",
+    "dsn": "./source.db"
+  },
+  "command": "UPDATE users SET exported=true, exported_time='<var>date|iso</var>' WHERE id=@id",
+  "scripts": {
+    "context": "./context.js"
+  }
+}
+```
+
+The `"scripts"` field contains files to run in predetermined moments.
+
+The javascript engine is native and is written completely in Go.
+The Go runtime creates a new js engine instance before each Action execution, adding some 
+context data to runtime environment.
+
+Those context data are accessible to js runtime using some defined variables:
+
+- `$data`: represent an array of data row that are the result of an SQL command.
+
+---------------
+NOTE: the javascript engine is much more powerful and can send emails, SMS, dispatch messages over 
+https, MQTT, and even more. More documentation will come soon.
+---------------
+
+SUPPORTED HOOKS:
+
+- `context`: is a script that il launched when "transaction execution context is created"
+
+### Context Hook ###
+
+```javascript
+/**
+ * context manipulation function.
+ */
+(function () {
+    console.log("Calling context.js, LENGTH=", $data.length)
+    
+    // just increment a value
+    for (const item of $data) {
+        item["number"] = item["number"] + 1;
+    }
+    return $data
+})();
+```
+
+The `context` hook can be used to alter data or remove arbitrary some rows from the context data.
+
+## Remote Execution ##
+
+When you need access a database that does not export its port to public network, here comes 
+the Data Mover "remote execution" feature.
+
+Data Mover has the ability to create NODES.
+
+Nodes are Data Mover executable, nothing else. When a Data Mover executable is exposed to public 
+network (with a public IP), it can open a TCP port and handle remote commands from other Data Mover nodes.
+
+This is a sample Data Mover configuration file (`services.production.json`) that enable this feature:
+
+```json
+{
+  "enabled": true,
+  "authorization": {
+    "type": "basic",
+    "value": "MTIzOmFiYw=="
+  },
+  "services": [
+    {
+      "enabled": true,
+      "name": "NIO SERVER",
+      "protocol": "nio",
+      "protocol_configuration": {
+        "port": 10001
+      }
+    }
+  ]
+}
+```
+
+If a Data Mover find such a configuration file (`services.MODE.json`) it configure itself as a Data Mover Node and expose its runtime at the Data Mover Chain.
+
+---------------
+NOTE: The NIO protocol is an implementation of TCP using autogenerated 
+public/private keys for each message. Data Mover Nodes communicate exchanging certificates before 
+each message.
+---------------
+
+### Delegate Execution to a Remote Node ###
+
+Let me call CLIENT the node that delegate to another Node the execution of the Action.
+
+Actions must be defined on the client. An Action contains information for a local connection to a database,
+an SQL statement and optionally a javascript file. All of those things must be declared on the CLIENT.
+
+Therefore, the SERVER can remain agnostic about the job it will receive.
+
+Here is how we delegate Actions to a remote server:
+
+```json
+{
+      "uid": "target",
+      "description": "save source to target",
+      "network": {
+        "host": "nio://remote.host.com:10001",
+        "secure": false,
+        "authorization": {
+          "type": "basic",
+          "value": "MTIzOmFiYw=="
+        }
+      },
+    ...
+```
+
+The Action declared into Job configuration file contains a field named `network`.
+Network field is an object containing:
+
+ - `host`: URL or remote node to delegate execution
+ - `secure`: Enable/Disable encryption (Encryption is more secure, but slow). NIO data are always encoded, packed into proprietary binary format and sent using a specific pattern (so is quite difficult to act as man-in-the-middle or read passing data).
+ - `authorization`: Authorization mode and token for client authentication on remote node. Only authenticated clients can send commands.
+
+![](./_docs/slide_002.png)
+
 ## Binaries ##
 
 Download binaries from this repository in [_build](./_build) directory.
 
 Supported OS:
-- Windows and Windows64
-- Linux and Linux Embedded Systems
-- OSX
-- Raspbian
+
+ - Windows and Windows64
+ - Linux and Linux Embedded Systems
+ - OSX
+ - Raspbian
 
 ## MIT License NON-COMMERCIAL USE ##
 

@@ -28,7 +28,7 @@ func main() {
 	//-- command flags --//
 	// run
 	cmdRun := flag.NewFlagSet("run", flag.ExitOnError)
-	dirWork := cmdRun.String("dir_work", gg.Paths.Absolute("./_workspace"), "Set a particular folder as main workspace")
+	dirWork := cmdRun.String("dir_work", gg.Paths.Absolute("./datamover_workspace"), "Set a particular folder as main workspace")
 	mode := cmdRun.String("m", datamover_commons.ModeProduction, "Mode allowed: 'debug' or 'production'")
 	quit := cmdRun.String("s", "stop", "Quit Command: Write a command (ex: 'stop') to enable stop mode")
 
