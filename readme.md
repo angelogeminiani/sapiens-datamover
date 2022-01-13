@@ -9,6 +9,8 @@ Data Mover features are:
  - **Auto Migrate Schema**: can migrate/update database schema
  - **Scheduler**: jobs can be scheduled and start every x time or just only once a day at the set time
  - **Move Data from Source to Target database**: this is Data Mover main feature 🐼
+ - **Multi Node Architecture**: Data Mover allow to create a network of remote node for edge execution
+ - **Javascript Native Engine**: With javascript you can customize behaviour and transform data 
 
 ## Quick Start ##
 
