@@ -62,7 +62,11 @@ func toSQLString(v interface{}) string {
 	kind := val.Kind()
 	switch kind {
 	case reflect.String:
-		return fmt.Sprintf("'%s'", strings.ReplaceAll(v.(string), "'", "''"))
+		if s, b := val.Interface().(string); b {
+			return fmt.Sprintf("'%s'", strings.ReplaceAll(s, "'", "''"))
+		} else {
+			return fmt.Sprintf("'%v'", v)
+		}
 	default:
 		return fmt.Sprintf("%v", v)
 	}
