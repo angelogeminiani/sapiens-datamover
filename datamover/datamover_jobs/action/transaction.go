@@ -63,6 +63,10 @@ func (instance *DataMoverTransaction) init() {
 
 	if nil != instance.settings {
 		for _, setting := range instance.settings {
+			err := setting.NormalizeScripts(instance.root)
+			if nil != err {
+				instance.logger.Warn(err)
+			}
 			instance.transaction = append(instance.transaction,
 				NewDataMoverAction(instance.root, instance.fnVarEngine, setting))
 		}

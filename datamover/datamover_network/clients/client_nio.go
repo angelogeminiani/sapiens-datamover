@@ -9,19 +9,21 @@ import (
 )
 
 type ClientNio struct {
-	host string
-	port int
-	auth *datamover_commons.SettingsNetAuthorization
+	host   string
+	port   int
+	auth   *datamover_commons.SettingsNetAuthorization
+	secure bool
 
 	_client   *gg_nio.NioClient
 	connected bool
 }
 
-func NewClientNio(host string, port int, auth *datamover_commons.SettingsNetAuthorization) (instance *ClientNio, err error) {
+func NewClientNio(host string, port int, settings *datamover_commons.DataMoverNetworkSettings) (instance *ClientNio, err error) {
 	instance = new(ClientNio)
 	instance.host = host
 	instance.port = port
-	instance.auth = auth
+	instance.auth = settings.Authentication
+	instance.secure = settings.Secure
 
 	// test client
 	_, err = instance.client()
@@ -41,6 +43,7 @@ func (instance *ClientNio) Send(payload string) (interface{}, error) {
 	defer client.Close()
 
 	// send packet message
+	client.Secure = instance.secure
 	resp, e := client.Send(instance.buildMessage(payload))
 	rawMessage := resp.Body
 

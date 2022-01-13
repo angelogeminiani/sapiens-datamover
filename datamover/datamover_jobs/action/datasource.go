@@ -5,6 +5,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action/schema"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action/scripting"
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -15,24 +16,29 @@ import (
 
 type DataMoverDatasource struct {
 	root               string
-	connectionSettings *datamover_commons.DataMoverConnectionSettings
-	script             string
 	fnVarEngine        *gg_fnvars.FnVarsEngine
+	connectionSettings *datamover_commons.DataMoverConnectionSettings
+	scriptContext      string
 
-	_db    *gorm.DB
-	schema *schema.DataMoverDatasourceSchema
+	_db          *gorm.DB
+	schema       *schema.DataMoverDatasourceSchema
+	scriptEngine *scripting.ScriptController
 }
 
-func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine, connection *datamover_commons.DataMoverConnectionSettings, script string) *DataMoverDatasource {
+func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine,
+	connection *datamover_commons.DataMoverConnectionSettings,
+	scripts *datamover_commons.DataMoverActionScriptSettings) *DataMoverDatasource {
+
 	instance := new(DataMoverDatasource)
 	instance.root = root
 	instance.fnVarEngine = fnVarEngine
-	instance.script = script
 	instance.connectionSettings = connection
 	if nil != instance.connectionSettings {
 		instance.schema = instance.connectionSettings.Schema
 	}
-
+	if nil != scripts {
+		instance.scriptContext = scripts.Context
+	}
 	_ = instance.init()
 
 	return instance
@@ -63,22 +69,28 @@ func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, c
 		if nil != err {
 			return nil, err
 		}
+		// context script
+		result = instance.scriptEngine.RunWithArray("context", instance.scriptContext, result)
 	} else {
+		// context script
+		context = instance.scriptEngine.RunWithArray("context", instance.scriptContext, context)
 		for _, data := range context {
-			// solve fnvars
-			fnRes, fnErr := instance.fnVarEngine.SolveText(command, data)
-			if nil == fnErr {
-				command = fnRes
-			}
-			statement := ToSQLStatement(command, data)
-			r, e := query(db, statement, data)
-			if nil != e {
-				return nil, e
-			}
-			if len(r) == 0 {
-				result = append(result, data)
-			} else {
-				result = append(result, r...)
+			if nil != data {
+				// solve fnvars
+				fnRes, fnErr := instance.fnVarEngine.SolveText(command, data)
+				if nil == fnErr {
+					command = fnRes
+				}
+				statement := ToSQLStatement(command, data)
+				r, e := query(db, statement, data)
+				if nil != e {
+					return nil, e
+				}
+				if len(r) == 0 {
+					result = append(result, data)
+				} else {
+					result = append(result, r...)
+				}
 			}
 		}
 	}
@@ -97,6 +109,7 @@ func (instance *DataMoverDatasource) init() error {
 			return err
 		}
 
+		instance.scriptEngine = scripting.NewScriptController(instance.root)
 	}
 	return nil
 }

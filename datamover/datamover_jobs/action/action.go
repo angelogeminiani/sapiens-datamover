@@ -26,7 +26,7 @@ func NewDataMoverAction(root string, fnVarEngine *gg_fnvars.FnVarsEngine, dataso
 	if nil != datasourceSettings {
 		instance.uid = datasourceSettings.Uid
 		instance.datasource = NewDataMoverDatasource(root, fnVarEngine,
-			datasourceSettings.Connection, datasourceSettings.Script)
+			datasourceSettings.Connection, datasourceSettings.Scripts)
 
 		_ = instance.init()
 	}
@@ -71,15 +71,6 @@ func (instance *DataMoverAction) Execute(context []map[string]interface{}) (resu
 		}
 	}
 
-	if nil != err {
-		return
-	}
-
-	script := instance.actionSettings.Script
-	if len(script) > 0 {
-		
-	}
-
 	return
 }
 
@@ -108,7 +99,7 @@ func (instance *DataMoverAction) initNetwork() error {
 			return err
 		}
 		c, e := clients.BuildNetworkClient(uri,
-			instance.actionSettings.Network.Authentication)
+			instance.actionSettings.Network)
 		if nil != e {
 			return e
 		}

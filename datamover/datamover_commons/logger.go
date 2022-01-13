@@ -49,6 +49,10 @@ func NewLogger(mode string, logger interface{}) *Logger {
 //	p u b l i c
 //----------------------------------------------------------------------------------------------------------------------
 
+func (instance *Logger) Logger() *gg_log.Logger {
+	return instance.logger
+}
+
 func (instance *Logger) Close() {
 	instance.logger.Close()
 }
