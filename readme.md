@@ -285,7 +285,7 @@ https, MQTT, and even more. More documentation will come soon.
 
 SUPPORTED HOOKS:
 
-- `context`: is a script that il launched when "transaction execution context is created"
+- `context`: is a script that is launched when "transaction execution context is created"
 
 ### Context Hook ###
 
