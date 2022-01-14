@@ -58,14 +58,14 @@ func (instance *DataMoverJobsController) Stop() (err error) {
 	return
 }
 
-func (instance *DataMoverJobsController) Run(name string, context []map[string]interface{}) (err error) {
+func (instance *DataMoverJobsController) Run(name string, contextData []map[string]interface{}, contextVariables map[string]interface{}) (err error) {
 	if nil != instance && !instance.closed {
 		for _, job := range instance.jobs {
 			if job.name == name {
 				if job.IsRunning() {
 					err = gg.Errors.Prefix(datamover_commons.JobAlreadyRunningError, name)
 				} else {
-					err = job.Run(context)
+					err = job.Run(contextData, contextVariables)
 				}
 				break
 			}
@@ -113,11 +113,12 @@ func (instance *DataMoverJobsController) onNextJobRun(event *gg_events.Event) {
 		if parent, b := event.Argument(1).(DataMoverJob); b {
 			name := event.ArgumentAsString(0)
 			context := event.Argument(2)
+			variables := gg.Convert.ToMap(event.Argument(3))
 			var err error
 			if a, aok := context.([]map[string]interface{}); aok {
-				err = instance.Run(name, a)
+				err = instance.Run(name, a, variables)
 			} else {
-				err = instance.Run(name, nil)
+				err = instance.Run(name, nil, variables)
 			}
 			if nil != err {
 				// log on parent

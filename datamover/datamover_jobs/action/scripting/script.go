@@ -34,44 +34,75 @@ func NewScriptController(root string) (instance *ScriptController) {
 //	p u b l i c
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *ScriptController) RunWithArray(name, script string, context []map[string]interface{}) []map[string]interface{} {
+func (instance *ScriptController) RunWithArray(name, script string, contextData []map[string]interface{}, contextVariables map[string]interface{}) (data []map[string]interface{}, variables map[string]interface{}) {
+	data = contextData
+	variables = contextVariables
 	if len(script) == 0 {
-		return context
+		return
 	}
 	env := &gg_scripting.EnvSettings{
 		EngineName:    "js",
 		ProgramName:   fmt.Sprintf(instance.dir, name),
 		ProgramScript: script,
 		Context: map[string]interface{}{
-			"$data": context,
+			"$data":      contextData,
+			"$variables": contextVariables,
 		},
 	}
 	ggx.Scripting.SetLogger(instance.logger)
 	response, err := ggx.Scripting.Run(env)
-	if nil != err {
-		return context
+
+	if nil == err {
+		mResponse := instance.toMap(response)
+		if d, b := mResponse["data"]; b {
+			dd := instance.toArrayOfMap(d)
+			if nil != dd {
+				data = dd
+			}
+		}
+		if v, b := mResponse["variables"]; b {
+			if mm, ok := v.(map[string]interface{}); ok {
+				variables = mm
+			}
+		}
 	}
-	return instance.toArray(response)
+
+	return
 }
 
-func (instance *ScriptController) RunWithRow(name, script string, row map[string]interface{}) map[string]interface{} {
+func (instance *ScriptController) RunWithRow(name, script string, contextData map[string]interface{}, contextVariables map[string]interface{}) (data, variables map[string]interface{}) {
+	data = contextData
+	variables = contextVariables
 	if len(script) == 0 {
-		return row
+		return
 	}
 	env := &gg_scripting.EnvSettings{
 		EngineName:    "js",
 		ProgramName:   fmt.Sprintf(instance.dir, name),
 		ProgramScript: script,
 		Context: map[string]interface{}{
-			"$data": row,
+			"$data":      contextData,
+			"$variables": contextVariables,
 		},
 	}
 	ggx.Scripting.SetLogger(instance.logger)
 	response, err := ggx.Scripting.Run(env)
-	if nil != err {
-		return row
+
+	if nil == err {
+		mResponse := instance.toMap(response)
+		if d, b := mResponse["data"]; b {
+			if dd, ok := d.(map[string]interface{}); ok {
+				data = dd
+			}
+		}
+		if v, b := mResponse["variables"]; b {
+			if mm, ok := v.(map[string]interface{}); ok {
+				variables = mm
+			}
+		}
 	}
-	return instance.toMap(response)
+
+	return
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -82,6 +113,16 @@ func (instance *ScriptController) toArray(value string) []map[string]interface{}
 	var result []map[string]interface{}
 	_ = gg.JSON.Read(value, &result)
 	return result
+}
+
+func (instance *ScriptController) toArrayOfMap(value interface{}) (response []map[string]interface{}) {
+	if nil != value {
+		a := gg.Convert.ToArray(value)
+		for _, item := range a {
+			response = append(response, gg.Convert.ToMap(item))
+		}
+	}
+	return
 }
 
 func (instance *ScriptController) toMap(value string) map[string]interface{} {

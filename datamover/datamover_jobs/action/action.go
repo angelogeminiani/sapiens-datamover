@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action/schema"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/clients"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/message"
 	"gorm.io/gorm"
@@ -18,24 +19,33 @@ type DataMoverAction struct {
 	clientNet      clients.ClientNetwork
 }
 
-func NewDataMoverAction(root string, fnVarEngine *gg_fnvars.FnVarsEngine, datasourceSettings *datamover_commons.DataMoverActionSettings) *DataMoverAction {
-	instance := new(DataMoverAction)
+func NewDataMoverAction(root string, fnVarEngine *gg_fnvars.FnVarsEngine, datasourceSettings *datamover_commons.DataMoverActionSettings) (instance *DataMoverAction, err error) {
+	instance = new(DataMoverAction)
 	instance.root = root
 	instance.actionSettings = datasourceSettings
 
 	if nil != datasourceSettings {
 		instance.uid = datasourceSettings.Uid
-		instance.datasource = NewDataMoverDatasource(root, fnVarEngine,
+		instance.datasource, err = NewDataMoverDatasource(root, fnVarEngine,
 			datasourceSettings.Connection, datasourceSettings.Scripts)
-
-		_ = instance.init()
+		// init the action
+		if nil == err {
+			err = instance.init()
+		}
 	}
-	return instance
+	return instance, err
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 //	p u b l i c
 // ---------------------------------------------------------------------------------------------------------------------
+
+func (instance *DataMoverAction) Uid() string {
+	if nil != instance {
+		return instance.uid
+	}
+	return ""
+}
 
 func (instance *DataMoverAction) IsValid() bool {
 	return nil != instance.datasource
@@ -45,7 +55,14 @@ func (instance *DataMoverAction) IsNetworkAction() bool {
 	return nil != instance.actionSettings && nil != instance.actionSettings.Network
 }
 
-func (instance *DataMoverAction) Execute(context []map[string]interface{}) (result []map[string]interface{}, err error) {
+func (instance *DataMoverAction) GetSchema() *schema.DataMoverDatasourceSchema {
+	if nil != instance && nil != instance.datasource {
+		return instance.datasource.GetSchema()
+	}
+	return nil
+}
+
+func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, variables map[string]interface{}) (result []map[string]interface{}, err error) {
 	result = make([]map[string]interface{}, 0)
 
 	if instance.IsNetworkAction() {
@@ -54,7 +71,8 @@ func (instance *DataMoverAction) Execute(context []map[string]interface{}) (resu
 			payload := new(message.NetworkMessagePayload)
 			payload.ActionRoot = instance.root
 			payload.ActionConfig = instance.actionSettings
-			payload.ActionContext = context
+			payload.ActionContextData = contextData
+			payload.ActionContextVariables = variables
 			respData, respErr := instance.clientNet.Send(payload.String())
 			if nil != respErr {
 				err = respErr
@@ -67,7 +85,7 @@ func (instance *DataMoverAction) Execute(context []map[string]interface{}) (resu
 		// LOCAL
 		command := instance.actionSettings.Command
 		if len(command) > 0 {
-			result, err = instance.datasource.GetData(context, command)
+			result, err = instance.datasource.GetData(command, contextData, variables)
 		}
 	}
 

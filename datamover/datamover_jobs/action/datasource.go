@@ -27,7 +27,7 @@ type DataMoverDatasource struct {
 
 func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine,
 	connection *datamover_commons.DataMoverConnectionSettings,
-	scripts *datamover_commons.DataMoverActionScriptSettings) *DataMoverDatasource {
+	scripts *datamover_commons.DataMoverActionScriptSettings) (*DataMoverDatasource, error) {
 
 	instance := new(DataMoverDatasource)
 	instance.root = root
@@ -39,16 +39,23 @@ func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine,
 	if nil != scripts {
 		instance.scriptContext = scripts.Context
 	}
-	_ = instance.init()
+	err := instance.init()
 
-	return instance
+	return instance, err
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 //	p u b l i c
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, command string) ([]map[string]interface{}, error) {
+func (instance *DataMoverDatasource) GetSchema() *schema.DataMoverDatasourceSchema {
+	if nil != instance {
+		return instance.schema
+	}
+	return nil
+}
+
+func (instance *DataMoverDatasource) GetData(command string, context []map[string]interface{}, variables map[string]interface{}) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
 
 	db, err := instance.connection()
@@ -65,24 +72,33 @@ func (instance *DataMoverDatasource) GetData(context []map[string]interface{}, c
 		if nil == fnErr {
 			command = fnRes
 		}
-		result, err = query(db, command, nil)
+		result, err = query(db, command, variables)
 		if nil != err {
 			return nil, err
 		}
 		// context script
-		result = instance.scriptEngine.RunWithArray("context", instance.scriptContext, result)
+		var scriptVars map[string]interface{}
+		result, scriptVars = instance.scriptEngine.RunWithArray("context", instance.scriptContext, result, variables)
+		if len(scriptVars) > 0 {
+			gg.Maps.Merge(true, variables, scriptVars)
+		}
 	} else {
 		// context script
-		context = instance.scriptEngine.RunWithArray("context", instance.scriptContext, context)
+		var scriptVars map[string]interface{}
+		context, scriptVars = instance.scriptEngine.RunWithArray("context", instance.scriptContext, context, variables)
+		if len(scriptVars) > 0 {
+			gg.Maps.Merge(true, variables, scriptVars)
+		}
 		for _, data := range context {
 			if nil != data {
+				ctx := gg.Maps.Merge(false, map[string]interface{}{}, data, variables)
 				// solve fnvars
-				fnRes, fnErr := instance.fnVarEngine.SolveText(command, data)
+				fnRes, fnErr := instance.fnVarEngine.SolveText(command, ctx)
 				if nil == fnErr {
 					command = fnRes
 				}
 				statement := ToSQLStatement(command, data)
-				r, e := query(db, statement, data)
+				r, e := query(db, statement, ctx)
 				if nil != e {
 					return nil, e
 				}

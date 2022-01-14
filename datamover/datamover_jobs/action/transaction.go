@@ -10,55 +10,66 @@ import (
 )
 
 type DataMoverTransaction struct {
-	root     string
-	logger   *gg_log.Logger
-	events   *gg_events.Emitter
-	settings []*datamover_commons.DataMoverActionSettings
+	root      string
+	logger    *gg_log.Logger
+	events    *gg_events.Emitter
+	settings  []*datamover_commons.DataMoverActionSettings
+	variables map[string]interface{}
 
 	fnVarEngine *gg_fnvars.FnVarsEngine
 	transaction []*DataMoverAction
 }
 
-func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, settings []*datamover_commons.DataMoverActionSettings) *DataMoverTransaction {
-	instance := new(DataMoverTransaction)
+func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, settings []*datamover_commons.DataMoverActionSettings, variables map[string]interface{}) (instance *DataMoverTransaction, err error) {
+	instance = new(DataMoverTransaction)
 	instance.root = root
 	instance.logger = logger
 	instance.events = events
 	instance.settings = settings
+	instance.variables = variables
 
-	instance.init()
+	err = instance.init()
 
-	return instance
+	return
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 //	p u b l i c
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *DataMoverTransaction) Execute(context []map[string]interface{}) (interface{}, error) {
+func (instance *DataMoverTransaction) Execute(contextData []map[string]interface{}, contextVariables map[string]interface{}) (responseData []map[string]interface{}, responseVariables map[string]interface{}, err error) {
 	if nil != instance && nil != instance.transaction {
-		var err error
+		if nil == contextVariables {
+			contextVariables = make(map[string]interface{})
+		}
+		if len(contextVariables) == 0 {
+			_ = gg.Maps.Merge(true, contextVariables, instance.variables)
+		}
 		for _, action := range instance.transaction {
 			if action.IsValid() {
-				context, err = action.Execute(context)
+				contextData, err = action.Execute(contextData, contextVariables)
 				if nil != err {
-					return nil, gg.Errors.Prefix(err, fmt.Sprintf("Action '%s' got error: ", action.uid))
+					err = gg.Errors.Prefix(err, fmt.Sprintf("Action '%s' got error: ", action.uid))
+					return
 				}
 			} else {
-				return nil, gg.Errors.Prefix(datamover_commons.ActionInvalidConfigurationError,
+				err = gg.Errors.Prefix(datamover_commons.ActionInvalidConfigurationError,
 					fmt.Sprintf("'%s': ", action.uid))
+				return
 			}
 		}
-		return context, nil
+		responseData = contextData
+		responseVariables = contextVariables
+		return
 	}
-	return nil, nil
+	return
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 //	p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *DataMoverTransaction) init() {
+func (instance *DataMoverTransaction) init() error {
 	instance.fnVarEngine = gg.FnVars.NewEngine()
 
 	if nil != instance.settings {
@@ -67,8 +78,19 @@ func (instance *DataMoverTransaction) init() {
 			if nil != err {
 				instance.logger.Warn(err)
 			}
-			instance.transaction = append(instance.transaction,
-				NewDataMoverAction(instance.root, instance.fnVarEngine, setting))
+			action, actionErr := NewDataMoverAction(instance.root, instance.fnVarEngine, setting)
+			if nil != actionErr {
+				return actionErr
+			}
+			instance.transaction = append(instance.transaction, action)
+			// debug info about schema
+			schema := action.GetSchema()
+			if nil != schema && instance.logger.GetLevel() == gg_log.LEVEL_DEBUG {
+				filename := gg.Paths.Concat(instance.root, fmt.Sprintf("schema.%s.json", action.uid))
+				_, _ = gg.IO.WriteTextToFile(schema.String(), filename)
+			}
 		}
 	}
+
+	return nil
 }

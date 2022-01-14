@@ -8,6 +8,11 @@ import (
 type DataMoverDatasourceSchema struct {
 	Tables []*DataMoverDatasourceSchemaTable `json:"tables"`
 }
+
+func (instance *DataMoverDatasourceSchema) String() string {
+	return gg.JSON.Stringify(instance)
+}
+
 type DataMoverDatasourceSchemaTable struct {
 	Name    string                             `json:"name"`
 	Columns []*DataMoverDatasourceSchemaColumn `json:"columns"`

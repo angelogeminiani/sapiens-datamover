@@ -12,6 +12,13 @@ type DataMoverSettingsJob struct {
 	Schedule    *DataMoverScheduleSettings `json:"schedule"`
 	NextRun     string                     `json:"next_run"` // name of job to run next
 	Transaction []*DataMoverActionSettings `json:"transaction"`
+	Variables   map[string]interface{}     `json:"variables"`
+}
+
+func (instance *DataMoverSettingsJob) SaveToFile(filename string) (err error) {
+	text := gg.JSON.Stringify(instance)
+	_, err = gg.IO.WriteTextToFile(text, filename)
+	return
 }
 
 type DataMoverScheduleSettings struct {

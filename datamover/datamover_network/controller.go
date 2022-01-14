@@ -145,11 +145,15 @@ func (instance *DataMoverNetworkController) handleMessage(networkMessage *messag
 func executeAction(payload *message.NetworkMessagePayload) interface{} {
 	root := payload.ActionRoot
 	fnvars := gg.FnVars.NewEngine()
-	context := payload.ActionContext
+	context := payload.ActionContextData
+	variables := payload.ActionContextVariables
 	settings := payload.ActionConfig
 	settings.Network = nil // remove network setting to avoid remote execution
-	exec := action.NewDataMoverAction(root, fnvars, settings)
-	respData, respErr := exec.Execute(context)
+	exec, err := action.NewDataMoverAction(root, fnvars, settings)
+	if nil != err {
+		return err
+	}
+	respData, respErr := exec.Execute(context, variables)
 	if nil != respErr {
 		return respErr
 	}
