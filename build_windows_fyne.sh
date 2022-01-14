@@ -9,7 +9,7 @@ then
   BUILD=0
 fi
 
-echo "START BUILDING WINDOWS VERSION WITH FYNE-CROSS $BASE.$BUILD..."
+echo "START BUILDING WINDOWS VERSION WITH FYNE-CROSS (https://github.com/fyne-io/fyne-cross) $BASE.$BUILD..."
 
 ## windows
 fyne-cross windows -arch=amd64,386
