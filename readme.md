@@ -249,6 +249,194 @@ TODO: add schema migration specifications
 
 TODO: add Special Formulas documentation
 
+### Variables ###
+
+In JOB's configuration file is possible declare "variables".
+
+```json
+{
+  "variables": {
+    "vlimit": 1,
+    "voffset": 0
+  }
+}
+```
+
+Variables can be used in query or javascript (javascript can also alter variables value or add new variables).
+
+Here is a sample query using variables:
+```sql
+SELECT * FROM alarmlogview LIMIT @vlimit OFFSET @voffset
+```
+
+`vlimit` and `voffset` are two special variables. Data Mover handle these variables as internal variables and 
+**automatically increment** tha value of `voffset` at each execution.
+
+Below a full `job.json` file containing variables.
+
+```json
+{
+  "schedule": {
+    "uid": "3-seconds-run",
+    "start_at": "",
+    "timeline": "second:3"
+  },
+  "next_run": "",
+  "variables": {
+    "vlimit": 1,
+    "voffset": 18
+  },
+  "transaction": [
+    {
+      "uid": "source",
+      "description": "select data from source",
+      "network": null,
+      "connection": {
+        "driver": "mysql",
+        "dsn": "root:root@tcp(127.0.0.1:3306)/test?charset=utf8mb4\u0026parseTime=True\u0026loc=Local",
+        "schema": null
+      },
+      "command": "SELECT * FROM alarmlogview LIMIT @vlimit OFFSET @voffset",
+      "scripts": null
+    },
+    {
+      "uid": "target",
+      "description": "save source to target",
+      "network": null,
+      "connection": {
+        "driver": "mysql",
+        "dsn": "root:root@tcp(127.0.0.1:3306)/test?charset=utf8mb4\u0026parseTime=True\u0026loc=Local",
+        "schema": {
+          "tables": [
+            {
+              "name": "alarmlogview_replica",
+              "columns": [
+                {
+                  "name": "id",
+                  "nullable": false,
+                  "type": "int",
+                  "tag": ""
+                },
+                {
+                  "name": "systemid",
+                  "nullable": false,
+                  "type": "varchar",
+                  "tag": ""
+                },
+                {
+                  "name": "alarmid",
+                  "nullable": true,
+                  "type": "int",
+                  "tag": ""
+                },
+                {
+                  "name": "sensorid",
+                  "nullable": true,
+                  "type": "int",
+                  "tag": ""
+                },
+                {
+                  "name": "sensortype",
+                  "nullable": true,
+                  "type": "int",
+                  "tag": ""
+                },
+                {
+                  "name": "timestamp",
+                  "nullable": true,
+                  "type": "datetime",
+                  "tag": ""
+                },
+                {
+                  "name": "active",
+                  "nullable": true,
+                  "type": "tinyint",
+                  "tag": ""
+                },
+                {
+                  "name": "data",
+                  "nullable": true,
+                  "type": "varchar",
+                  "tag": ""
+                },
+                {
+                  "name": "name",
+                  "nullable": true,
+                  "type": "varchar",
+                  "tag": ""
+                },
+                {
+                  "name": "tag",
+                  "nullable": true,
+                  "type": "varchar",
+                  "tag": ""
+                },
+                {
+                  "name": "unixts",
+                  "nullable": true,
+                  "type": "bigint",
+                  "tag": ""
+                },
+                {
+                  "name": "groupid",
+                  "nullable": false,
+                  "type": "int",
+                  "tag": ""
+                },
+                {
+                  "name": "groupname",
+                  "nullable": false,
+                  "type": "varchar",
+                  "tag": ""
+                },
+                {
+                  "name": "machineid",
+                  "nullable": false,
+                  "type": "int",
+                  "tag": ""
+                },
+                {
+                  "name": "machinename",
+                  "nullable": false,
+                  "type": "varchar",
+                  "tag": ""
+                },
+                {
+                  "name": "lineid",
+                  "nullable": false,
+                  "type": "int",
+                  "tag": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "command": "INSERT INTO alarmlogview_replica (...)",
+      "scripts": {
+        "context": ""
+      }
+    }
+  ]
+}
+```
+
+In this job.json configuration file above we have two Actions:
+ 
+ - `"SELECT * FROM alarmlogview LIMIT @vlimit OFFSET @voffset"`: select all fields from a table using LIMIT and OFFSET
+ - `"INSERT INTO alarmlogview_replica (...)"` insert all selected rows into another table
+
+In this case `@vlimit` and `@voffset` are very useful because the table `alarmlogview` may contain a thousand records 
+and this should compromise performance or even system memory when Data Mover work to move data
+from a database to another.
+
+---------------
+**WARNING:** Please, consider 
+to use `@vlimit` and `@voffset` at least each time you use a remote data transfer. Moving data
+over the network may result very slow if you are moving megabytes of data.
+---------------
+
+
 ### Scripting ###
 
 Data Mover has an internal javascript engine.
