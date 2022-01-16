@@ -12,4 +12,4 @@ fi
 echo "START BUILDING WINDOWS 64 VERSION $BASE.$BUILD..."
 
 ## windows
-env GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-H windowsgui" -o ./_build/windows64/datamover.exe ./main.go
+env GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-H windowsgui" -o ./__build/windows64/datamover.exe ./main.go

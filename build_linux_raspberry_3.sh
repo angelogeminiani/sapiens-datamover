@@ -12,4 +12,4 @@ fi
 echo "START BUILDING LINUX RASPBERRY VERSION $BASE.$BUILD..."
 
 ## linux
-env GOOS=linux GOARCH=arm GOARM=5 go build -o ./_build/linux_raspberry_3/datamover ./main.go
+env GOOS=linux GOARCH=arm GOARM=5 go build -o ./__build/linux_raspberry_3/datamover ./main.go

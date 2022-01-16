@@ -12,4 +12,4 @@ fi
 echo "START BUILDING WINDOWS 32 VERSION $BASE.$BUILD..."
 
 ## windows
-env GOOS=windows GOARCH=386 go build -ldflags="-H windowsgui" -o ./_build/windows32/datamover.exe ./main.go
+env GOOS=windows GOARCH=386 go build -ldflags="-H windowsgui" -o ./__build/windows32/datamover.exe ./main.go

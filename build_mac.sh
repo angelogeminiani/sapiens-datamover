@@ -13,9 +13,9 @@ fi
 echo $BUILD > ./build_version.txt
 echo "START BUILDING MAC OSX VERSION $BASE.$BUILD..."
 
-## mac
-go build  -o ./_build/mac/datamover ./main.go
+# darwin-amd64
+go build  -o ./__build/darwin-amd64/datamover ./main.go
 echo "END BUILDING VERSION $BASE.$BUILD."
 
-cp ./build_version.txt ./_build
+cp ./build_version.txt ./__build
 

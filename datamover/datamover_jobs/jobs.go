@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_utils"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"fmt"
+	"path"
 )
 
 type DataMoverJobsController struct {
@@ -86,6 +87,9 @@ func (instance *DataMoverJobsController) init() (err error) {
 		return
 	}
 
+	count := 0
+	instance.logger.Debug(fmt.Sprintf("Loading JOBS from: %s", instance.root))
+
 	// load jobs
 	var dirs []string
 	dirs, err = gg.Paths.ListDir(instance.root)
@@ -93,6 +97,8 @@ func (instance *DataMoverJobsController) init() (err error) {
 		for _, dir := range dirs {
 			job, jerr := NewDataMoverJob(instance.isDebug, dir, instance.events)
 			if nil == jerr {
+				count++
+				instance.logger.Debug(fmt.Sprintf("  * Loaded JOB '%s' (scheduled=%v).", path.Base(dir), job.IsScheduled()))
 				instance.jobs = append(instance.jobs, job)
 			} else {
 				err = gg.Errors.Prefix(err, fmt.Sprintf("Error creating JOB '%s'", dir))
@@ -100,6 +106,8 @@ func (instance *DataMoverJobsController) init() (err error) {
 			}
 		}
 	}
+
+	instance.logger.Debug(fmt.Sprintf("Loaded '%v' JOBS.", count))
 
 	// subscribe events
 	instance.events.On(datamover_commons.EventOnNextJobRun, instance.onNextJobRun)

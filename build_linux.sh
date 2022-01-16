@@ -12,5 +12,5 @@ fi
 echo "START BUILDING LINUX VERSION $BASE.$BUILD..."
 
 ## linux
-env GOOS=linux GOARCH=386 go build -o ./_build/linux/datamover ./main.go
+env GOOS=linux GOARCH=386 go build -o ./__build/linux/datamover ./main.go
 
