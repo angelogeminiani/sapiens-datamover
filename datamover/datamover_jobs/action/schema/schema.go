@@ -23,7 +23,7 @@ func (instance *DataMoverDatasourceSchemaTable) String() string {
 }
 
 func (instance *DataMoverDatasourceSchemaTable) Struct() interface{} {
-	builder := gg.Structs.New()
+	builder := gg.Structs.NewBuilder()
 	for _, column := range instance.Columns {
 		tag := column.Tag
 		if len(tag) > 0 {

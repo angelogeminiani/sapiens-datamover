@@ -188,7 +188,9 @@ func (instance *DataMoverJob) run(contextData []map[string]interface{}, contextV
 			}
 
 			// update settings on file
-			instance.incrementVariables(variables)
+			if len(response) > 0 {
+				instance.incrementVariables(variables)
+			}
 
 			// run next
 			if len(instance.settings.NextRun) > 0 {

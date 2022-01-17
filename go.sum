@@ -1,7 +1,11 @@
 bitbucket.org/digi-sense/gg-core v0.1.31 h1:v3y8xeNK/J73il160svhIchGWCTuswF0CfXO6TeDdZw=
 bitbucket.org/digi-sense/gg-core v0.1.31/go.mod h1:blA5TgQiKHvKZoEN8JSuu3b31rX/t0YtnDgVB+FqrWQ=
+bitbucket.org/digi-sense/gg-core v0.1.33 h1:iyAAT+arAHZWAlPKS43Rwifk+rw8XsslPisKVZtbDXg=
+bitbucket.org/digi-sense/gg-core v0.1.33/go.mod h1:blA5TgQiKHvKZoEN8JSuu3b31rX/t0YtnDgVB+FqrWQ=
 bitbucket.org/digi-sense/gg-core-x v0.1.31 h1:XiV3tm7C9NawpzmoFZ7kEjIvLO+gR/j6+Ddu7B7CF8Q=
 bitbucket.org/digi-sense/gg-core-x v0.1.31/go.mod h1:wgDbOuTN7JIZYjPSchNPdA/lsx0HV5vkT8SIQRpyKkk=
+bitbucket.org/digi-sense/gg-core-x v0.1.33 h1:SmP7mj3nlk9XJRU57pqkT7PtTQ8pl6tId0o7C8BmZ2E=
+bitbucket.org/digi-sense/gg-core-x v0.1.33/go.mod h1:UiNxS1uQ6Hi7pwBHXJLE4eI7FgcuW+JwBaVj2yqy6Jc=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=

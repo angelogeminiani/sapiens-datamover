@@ -1,37 +1,38 @@
 # Data Mover #
+
 ![](./icon_128.png)
 
 Data Mover is an Open Source Data Migration tool.
 
 Data Mover features are:
 
- - **Multi database**: SQLite, SQL Server, MySQL/MariaDB, Postgres
- - **Auto Migrate Schema**: can migrate/update database schema
- - **Scheduler**: jobs can be scheduled and start every x time or just only once a day at the set time
- - **Move Data from Source to Target database**: this is Data Mover main feature 🐼
- - **Multi Node Architecture**: Data Mover allow to create a network of remote node for edge execution
- - **Javascript Native Engine**: With javascript you can customize behaviour and transform data 
+- **Multi database**: SQLite, SQL Server, MySQL/MariaDB, Postgres
+- **Auto Migrate Schema**: can migrate/update database schema
+- **Scheduler**: jobs can be scheduled and start every x time or just only once a day at the set time
+- **Move Data from Source to Target database**: this is Data Mover main feature 🐼
+- **Multi Node Architecture**: Data Mover allow to create a network of remote node for edge execution
+- **Javascript Native Engine**: With javascript you can customize behaviour and transform data
 
 ## Quick Start ##
 
 ### Introduction ###
 
-🐼 Data Mover works on a specific directory named "datamover_workspace" 
+🐼 Data Mover works on a specific directory named "datamover_workspace"
 (you can change the default name launching the executable with a parameter).
 
-When Data Mover starts, firs of all look for its workspace. If workspace is not found, Data Mover creates one using 
-the start path a workspace root.
+When Data Mover starts, firs of all look for its workspace. If workspace is not found, Data Mover creates one using the
+start path a workspace root.
 
 Below is a workspace directory example, named "_workspace".
 
 ![](./_docs/workspace.png)
 
 ---------------
-NOTE: this workspace folder contains also two sample databases, but this is only an example and your databases 
-can be placed anywhere.
+NOTE: this workspace folder contains also two sample databases, but this is only an example and your databases can be
+placed anywhere.
 ---------------
 
-### Launch the Panda  🐼 ###
+### Launch the Panda 🐼 ###
 
 Data Mover support some commands and parameters.
 
@@ -42,12 +43,12 @@ datamover run -dir_work=./_workspace -m=production
 
 COMMANDS:
 
- - `run` : tell Data Mover you want run the entire program (more commands will come in future)
+- `run` : tell Data Mover you want run the entire program (more commands will come in future)
 
 PARAMETERS:
 
- - `-dir_work`: path of workspace. Can be absolute or relative path
- - `-m`: mode. Can be `debug` or `production`. The `debug` mode is useful if you need a verbose log.
+- `-dir_work`: path of workspace. Can be absolute or relative path
+- `-m`: mode. Can be `debug` or `production`. The `debug` mode is useful if you need a verbose log.
 
 For binary files, please look [here](./_build).
 
@@ -61,8 +62,8 @@ A "Job" is basically a JSON file describing what Data Mover should do at a prede
 
 Each "job" contains:
 
- - Schedule: optional data to define WHEN the job must start
- - Transaction: an array of "Action" to define WHAT the job must do
+- Schedule: optional data to define WHEN the job must start
+- Transaction: an array of "Action" to define WHAT the job must do
 
 So, jobs define WHEN and WHAT about Data Mover.
 
@@ -70,8 +71,8 @@ Let's start analyze the anatomy of a Data Mover job.
 
 ### Schedule ###
 
-Schedule collects some settings to define a timed task.
-Data Mover has an internal task manager and a scheduler working on a thread safe environment.
+Schedule collects some settings to define a timed task. Data Mover has an internal task manager and a scheduler working
+on a thread safe environment.
 
 ```json
 {
@@ -84,10 +85,11 @@ Data Mover has an internal task manager and a scheduler working on a thread safe
 
 Is quite simple figure how Schedule works:
 
- - start_at: optional value representing hour and minute. ex: "10:20", "18:30", etc..
- - timeline: optional value representing a key-pair "unit:value". ex: "millisecond:100", "second:3", "minute:10", "hour:24".
+- start_at: optional value representing hour and minute. ex: "10:20", "18:30", etc..
+- timeline: optional value representing a key-pair "unit:value". ex: "millisecond:100", "second:3", "minute:10", "hour:
+  24".
 
-Schedule is optional at all. If you do not specify any value, the job will not be scheduled, but remain a valid job that 
+Schedule is optional at all. If you do not specify any value, the job will not be scheduled, but remain a valid job that
 can be invoked from another job (see below about "Job Chains").
 
 ### Job Chains ###
@@ -102,14 +104,15 @@ can be invoked from another job (see below about "Job Chains").
 }
 ```
 
-Not all jobs must be scheduled.
-Sometimes you should prefer schedule a master job and define different jobs for some other tasks to invoke after the master job.
+Not all jobs must be scheduled. Sometimes you should prefer schedule a master job and define different jobs for some
+other tasks to invoke after the master job.
 
 That's a chain.
 
 "next_run" is the field that tell a job what to do next.
 
 ### Transactions ###
+
 ```json
 {
   "transaction": [
@@ -151,23 +154,27 @@ That's a chain.
 A transaction is an array of actions.
 
 This is a sample action:
+
 ```json
 {
-      "uid": "source",
-      "description": "select data from source",
-      "connection": {
-        "driver": "sqlite",
-        "dsn": "./source.db"
-      },
-      "command": "SELECT * FROM users WHERE exported=false",
-      "script": ""
-    }
+  "uid": "source",
+  "description": "select data from source",
+  "connection": {
+    "driver": "sqlite",
+    "dsn": "./source.db"
+  },
+  "command": "SELECT * FROM users WHERE exported=false",
+  "script": ""
+}
 ```
+
 This action works on a SQLite db (./source.db) and select all not exported yet data from user table.
 
-That's all. But transactions works using actions that interact together creating an execution context, a transaction context.
+That's all. But transactions works using actions that interact together creating an execution context, a transaction
+context.
 
-The context enable actions to share data during transaction execution. And here comes our first action: this action select data and keep them in context for next action.
+The context enable actions to share data during transaction execution. And here comes our first action: this action
+select data and keep them in context for next action.
 
 Next action will do something new with data in context:
 
@@ -190,19 +197,20 @@ This action, using context data created from first action, executes an SQL Formu
 ```
 INSERT INTO users (...) returning id
 ```
+
 This SQL Formula is a custom SQL like command with a special statement: `(...)`
 
-The three-dots-statement 🌿 tells the panda 🐼 of Data Mover to extract all fields
-and values from the datasource into context and execute an INSERT for each row
-in the context.
+The three-dots-statement 🌿 tells the panda 🐼 of Data Mover to extract all fields and values from the datasource into
+context and execute an INSERT for each row in the context.
 
-So Data Mover's panda will start moving row after row into the context to the target database 
-executing an INSERT statement for each source row.
+So Data Mover's panda will start moving row after row into the context to the target database executing an INSERT
+statement for each source row.
 
 Reassuming:
 
- - First we selected some rows from a datasource
- - then we started a loop on each row and executed and INSERT into a target database. The insert command was auto-completed from the panda 🐼 of Data Mover that is able to understand a three-dot-statement 🌿.
+- First we selected some rows from a datasource
+- then we started a loop on each row and executed and INSERT into a target database. The insert command was
+  auto-completed from the panda 🐼 of Data Mover that is able to understand a three-dot-statement 🌿.
 
 Now, to complete the transaction, we should need to mark all source data as exported.
 
@@ -221,25 +229,68 @@ And here comes our third action in Transaction:
 }
 ```
 
-The third action, using same context, now try to execute a new UPDATE command into source database setting all fields as "exported".
+The third action, using same context, now try to execute a new UPDATE command into source database setting all fields
+as "exported".
 
 The "SQL Formula" (a Data Mover special SQL commands) is:
+
 ```
 UPDATE users SET exported=true, exported_time='<var>date|iso</var>' WHERE id=@id
 ```
 
 In this statement we have two strange things:
+
 - 🌿 `<var>date|iso</var>`: a Special Expression
 - 🌿 `@id`: a named parameter
 
 Nothing magic, just panda 🐼 style.
 
-Data Mover's panda is also able to interpret some Special Expressions like the one above (that return an ISO-8601 date time).
+Data Mover's panda is also able to interpret some Special Expressions like the one above (that return an ISO-8601 date
+time).
 
 Otherwise, the `@id` named parameter uses the context to get a value for each loop.
 
-That's all.
-We just wrote three simple ACTIONs and the panda 🐼 did all the job.
+That's all. We just wrote three simple ACTIONs and the panda 🐼 did all the job.
+
+### Connecting to a Database ###
+
+Data Mover officially supports databases MySQL, PostgreSQL, SQLite, SQL Server.
+
+### MySQL ###
+
+```
+{
+    "driver": "mysql",
+    "dsn": "root:root@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+}
+```
+
+### PostgreSQL ###
+
+```
+{
+    "driver": "postgres",
+    "dsn": "host=localhost user=postgres password=Postgres1234 dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+}
+```
+
+### SQLite ###
+
+```
+{
+    "driver": "sqlite",
+    "dsn": "./source.db"
+}
+```
+
+### SQL Server ###
+
+```
+{
+    "driver": "sqlserver",
+    "dsn": "sqlserver://user:passwordxxx@localhost:9930?database=test"
+}
+```
 
 ### Schema Migration ###
 
@@ -265,11 +316,14 @@ In JOB's configuration file is possible declare "variables".
 Variables can be used in query or javascript (javascript can also alter variables value or add new variables).
 
 Here is a sample query using variables:
+
 ```sql
-SELECT * FROM alarmlogview LIMIT @vlimit OFFSET @voffset
+SELECT *
+FROM alarmlogview LIMIT @vlimit
+OFFSET @voffset
 ```
 
-`vlimit` and `voffset` are two special variables. Data Mover handle these variables as internal variables and 
+`vlimit` and `voffset` are two special variables. Data Mover handle these variables as internal variables and
 **automatically increment** tha value of `voffset` at each execution.
 
 Below a full `job.json` file containing variables.
@@ -422,20 +476,18 @@ Below a full `job.json` file containing variables.
 ```
 
 In this job.json configuration file above we have two Actions:
- 
- - `"SELECT * FROM alarmlogview LIMIT @vlimit OFFSET @voffset"`: select all fields from a table using LIMIT and OFFSET
- - `"INSERT INTO alarmlogview_replica (...)"` insert all selected rows into another table
 
-In this case `@vlimit` and `@voffset` are very useful because the table `alarmlogview` may contain a thousand records 
-and this should compromise performance or even system memory when Data Mover work to move data
-from a database to another.
+- `"SELECT * FROM alarmlogview LIMIT @vlimit OFFSET @voffset"`: select all fields from a table using LIMIT and OFFSET
+- `"INSERT INTO alarmlogview_replica (...)"` insert all selected rows into another table
+
+In this case `@vlimit` and `@voffset` are very useful because the table `alarmlogview` may contain a thousand records
+and this should compromise performance or even system memory when Data Mover work to move data from a database to
+another.
 
 ---------------
-**WARNING:** Please, consider 
-to use `@vlimit` and `@voffset` at least each time you use a remote data transfer. Moving data
-over the network may result very slow if you are moving megabytes of data.
+**WARNING:** Please, consider to use `@vlimit` and `@voffset` at least each time you use a remote data transfer. Moving
+data over the network may result very slow if you are moving megabytes of data.
 ---------------
-
 
 ### Scripting ###
 
@@ -460,17 +512,16 @@ Let's take a look at configuration:
 
 The `"scripts"` field contains files to run in predetermined moments.
 
-The javascript engine is native and is written completely in Go.
-The Go runtime creates a new js engine instance before each Action execution, adding some 
-context data to runtime environment.
+The javascript engine is native and is written completely in Go. The Go runtime creates a new js engine instance before
+each Action execution, adding some context data to runtime environment.
 
 Those context data are accessible to js runtime using some defined variables:
 
 - `$data`: represent an array of data row that are the result of an SQL command.
 
 ---------------
-NOTE: the javascript engine is much more powerful and can send emails, SMS, dispatch messages over 
-https, MQTT, and even more. More documentation will come soon.
+NOTE: the javascript engine is much more powerful and can send emails, SMS, dispatch messages over https, MQTT, and even
+more. More documentation will come soon.
 ---------------
 
 SUPPORTED HOOKS:
@@ -485,7 +536,7 @@ SUPPORTED HOOKS:
  */
 (function () {
     console.log("Calling context.js, LENGTH=", $data.length)
-    
+
     // just increment a value
     for (const item of $data) {
         item["number"] = item["number"] + 1;
@@ -498,13 +549,13 @@ The `context` hook can be used to alter data or remove arbitrary some rows from 
 
 ## Remote Execution ##
 
-When you need access a database that does not export its port to public network, here comes 
-the Data Mover "remote execution" feature.
+When you need access a database that does not export its port to public network, here comes the Data Mover "remote
+execution" feature.
 
 Data Mover has the ability to create NODES.
 
-Nodes are Data Mover executable, nothing else. When a Data Mover executable is exposed to public 
-network (with a public IP), it can open a TCP port and handle remote commands from other Data Mover nodes.
+Nodes are Data Mover executable, nothing else. When a Data Mover executable is exposed to public network (with a public
+IP), it can open a TCP port and handle remote commands from other Data Mover nodes.
 
 This is a sample Data Mover configuration file (`services.production.json`) that enable this feature:
 
@@ -528,20 +579,20 @@ This is a sample Data Mover configuration file (`services.production.json`) that
 }
 ```
 
-If a Data Mover find such a configuration file (`services.MODE.json`) it configure itself as a Data Mover Node and expose its runtime at the Data Mover Chain.
+If a Data Mover find such a configuration file (`services.MODE.json`) it configure itself as a Data Mover Node and
+expose its runtime at the Data Mover Chain.
 
 ---------------
-NOTE: The NIO protocol is an implementation of TCP using autogenerated 
-public/private keys for each message. Data Mover Nodes communicate exchanging certificates before 
-each message.
+NOTE: The NIO protocol is an implementation of TCP using autogenerated public/private keys for each message. Data Mover
+Nodes communicate exchanging certificates before each message.
 ---------------
 
 ### Delegate Execution to a Remote Node ###
 
 Let me call CLIENT the node that delegate to another Node the execution of the Action.
 
-Actions must be defined on the client. An Action contains information for a local connection to a database,
-an SQL statement and optionally a javascript file. All of those things must be declared on the CLIENT.
+Actions must be defined on the client. An Action contains information for a local connection to a database, an SQL
+statement and optionally a javascript file. All of those things must be declared on the CLIENT.
 
 Therefore, the SERVER can remain agnostic about the job it will receive.
 
@@ -549,25 +600,27 @@ Here is how we delegate Actions to a remote server:
 
 ```json
 {
-      "uid": "target",
-      "description": "save source to target",
-      "network": {
-        "host": "nio://remote.host.com:10001",
-        "secure": false,
-        "authorization": {
-          "type": "basic",
-          "value": "MTIzOmFiYw=="
-        }
-      },
-    ...
+  "uid": "target",
+  "description": "save source to target",
+  "network": {
+    "host": "nio://remote.host.com:10001",
+    "secure": false,
+    "authorization": {
+      "type": "basic",
+      "value": "MTIzOmFiYw=="
+    }
+  },
+  ...
 ```
 
-The Action declared into Job configuration file contains a field named `network`.
-Network field is an object containing:
+The Action declared into Job configuration file contains a field named `network`. Network field is an object containing:
 
- - `host`: URL or remote node to delegate execution
- - `secure`: Enable/Disable encryption (Encryption is more secure, but slow). NIO data are always encoded, packed into proprietary binary format and sent using a specific pattern (so is quite difficult to act as man-in-the-middle or read passing data).
- - `authorization`: Authorization mode and token for client authentication on remote node. Only authenticated clients can send commands.
+- `host`: URL or remote node to delegate execution
+- `secure`: Enable/Disable encryption (Encryption is more secure, but slow). NIO data are always encoded, packed into
+  proprietary binary format and sent using a specific pattern (so is quite difficult to act as man-in-the-middle or read
+  passing data).
+- `authorization`: Authorization mode and token for client authentication on remote node. Only authenticated clients can
+  send commands.
 
 ![](./_docs/slide_002.png)
 
@@ -577,22 +630,22 @@ Download binaries from this repository in [_build](./_build) directory.
 
 Supported OS:
 
- - Windows and Windows64
- - Linux and Linux Embedded Systems
- - OSX
- - Raspbian
+- Windows and Windows64
+- Linux and Linux Embedded Systems
+- OSX
+- Raspbian
 
 ## MIT License NON-COMMERCIAL USE ##
 
-Data Mover is distributed under MIT license fo non-commercial use.
-If you use as a tool for your own projects, you can use Data Mover under MIT license.
+Data Mover is distributed under MIT license fo non-commercial use. If you use as a tool for your own projects, you can
+use Data Mover under MIT license.
 
-NON-COMMERCIAL: non-commercial is that no money should be exchanged as part of the transaction of using of the materials – regardless of whether the money represents a break-even of marginal cost, reimbursement or profit.
+NON-COMMERCIAL: non-commercial is that no money should be exchanged as part of the transaction of using of the materials
+– regardless of whether the money represents a break-even of marginal cost, reimbursement or profit.
 
 ## Commercial Use License ##
 
-If you are a company that sell projects to its customers and need Data Mover, 
-you should ask for a Commercial License.
+If you are a company that sell projects to its customers and need Data Mover, you should ask for a Commercial License.
 
 For Commercial License, please write to [angelo.geminiani@ggtechnologies.sm](mailto:angelo.geminiani@ggtechnologies.sm)
 
