@@ -157,6 +157,7 @@ That's a chain.
         "schema": {}
       },
       "command": "INSERT INTO users (...) returning id",
+      "fields_mapping": null,
       "script": ""
     },
     {
