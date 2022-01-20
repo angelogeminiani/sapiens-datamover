@@ -26,12 +26,13 @@ type DataMoverScheduleSettings struct {
 }
 
 type DataMoverActionSettings struct {
-	Uid         string                         `json:"uid"`
-	Description string                         `json:"description"`
-	Network     *DataMoverNetworkSettings      `json:"network"`
-	Connection  *DataMoverConnectionSettings   `json:"connection"`
-	Command     string                         `json:"command"`
-	Scripts     *DataMoverActionScriptSettings `json:"scripts"`
+	Uid           string                         `json:"uid"`
+	Description   string                         `json:"description"`
+	Network       *DataMoverNetworkSettings      `json:"network"`
+	Connection    *DataMoverConnectionSettings   `json:"connection"`
+	Command       string                         `json:"command"`
+	FieldsMapping map[string]interface{}         `json:"fields_mapping"` // optional: use only if source dataset is different from target
+	Scripts       *DataMoverActionScriptSettings `json:"scripts"`
 }
 
 func (instance *DataMoverActionSettings) NormalizeScripts(root string) (err error) {

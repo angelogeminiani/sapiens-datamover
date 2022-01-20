@@ -55,7 +55,7 @@ func (instance *DataMoverDatasource) GetSchema() *schema.DataMoverDatasourceSche
 	return nil
 }
 
-func (instance *DataMoverDatasource) GetData(command string, context []map[string]interface{}, variables map[string]interface{}) ([]map[string]interface{}, error) {
+func (instance *DataMoverDatasource) GetData(command string, mapping map[string]interface{}, context []map[string]interface{}, variables map[string]interface{}) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
 
 	db, err := instance.connection()
@@ -83,6 +83,7 @@ func (instance *DataMoverDatasource) GetData(command string, context []map[strin
 			gg.Maps.Merge(true, variables, scriptVars)
 		}
 	} else {
+
 		// context script
 		var scriptVars map[string]interface{}
 		context, scriptVars = instance.scriptEngine.RunWithArray("context", instance.scriptContext, context, variables)
@@ -97,7 +98,7 @@ func (instance *DataMoverDatasource) GetData(command string, context []map[strin
 				if nil == fnErr {
 					command = fnRes
 				}
-				statement := ToSQLStatement(command, data)
+				statement := ToSQLStatement(command, data, mapping)
 				r, e := query(db, statement, ctx)
 				if nil != e {
 					return nil, e

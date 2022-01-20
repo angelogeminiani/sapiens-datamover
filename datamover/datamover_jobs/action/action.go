@@ -85,7 +85,8 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 		// LOCAL
 		command := instance.actionSettings.Command
 		if len(command) > 0 {
-			result, err = instance.datasource.GetData(command, contextData, variables)
+			mapping := instance.actionSettings.FieldsMapping
+			result, err = instance.datasource.GetData(command, mapping, contextData, variables)
 		}
 	}
 

@@ -15,15 +15,21 @@ func IsRecordNotFoundError(err error) bool {
 }
 
 // ToSQLStatement convert "INSERT INTO table (...)" into "INSERT INTO table (field1, field2,...) VALUES (value1, value2,...)"
-func ToSQLStatement(source string, m map[string]interface{}) string {
+func ToSQLStatement(source string, data map[string]interface{}, mapping map[string]interface{}) string {
 	if strings.Index(source, "(...)") > -1 {
 		var fields, values string
-		for k, v := range m {
+		for k, v := range data {
 			if len(fields) > 0 {
 				fields += ","
 				values += ","
 			}
-			fields += k
+			// field
+			if n := gg.Maps.Get(mapping, k); nil != n {
+				fields += gg.Convert.ToString(n)
+			} else {
+				fields += k
+			}
+			// value
 			values += toSQLString(v)
 		}
 		statement := fmt.Sprintf("(%s) VALUES (%s)", fields, values)
