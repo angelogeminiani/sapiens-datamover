@@ -554,17 +554,17 @@ SUPPORTED HOOKS:
 ### Context Hook ###
 
 ```javascript
-/**
- * context manipulation function.
- */
 (function () {
-    console.log("Calling context.js, LENGTH=", $data.length)
+  console.log("Calling context.js, LENGTH=", $data.length)
+  for (const item of $data) {
+    item["number"] = item["number"] + 1;
+  }
 
-    // just increment a value
-    for (const item of $data) {
-        item["number"] = item["number"] + 1;
-    }
-    return $data
+  // return optionally changed data
+  return {
+    "data":$data,
+    "variables":$variables
+  }
 })();
 ```
 
