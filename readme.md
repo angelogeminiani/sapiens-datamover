@@ -587,7 +587,70 @@ Scripts are defined into "scripts" configuration field.
 Context hooks can be used to alter dataset (internal variable `$data`), alter variables (`$variables`) or perform
 advanced actions like send email, SMS o even HTTP requests and more.
 
+```javascript
+/**
+ * context manipulation function extended.
+ * This script send an SMS using a gateway.
+ */
+(function () {
+    console.log("Calling context.js, LENGTH=", $data.length, JSON.stringify($variables))
+    $variables.count = $variables.count || 0;
+    console.log("VARIABLES: ", JSON.stringify($variables))
 
+    function sendSMS(message, to) {
+        console.log("sendSMS.init");
+        try {
+            // import SMS module
+            var sender = require("sms-sender");
+            // configure transport using an SMS gateway
+            var transport = sender.createTransport(
+                "smshosting",
+                {
+                    "enabled": true,
+                    "auto-short-url": true,
+                    "providers": {
+                        "smshosting": {
+                            "method": "GET",
+                            "endpoint": "https://api.smshosting.it/rest/api/smart/sms/send?authKey={{auth-key}}&authSecret={{auth-secret}}&text={{message}}&to={{to}}&from={{from}}",
+                            "params": {
+                                "auth-key": "xxxx",
+                                "auth-secret": "xxxx",
+                                "message": "",
+                                "to": "",
+                                "from": "ANGELO"
+                            },
+                            "headers": {}
+                        }
+                    }
+                }
+            );
+
+            // send the message
+            console.log("sending message: ", message, "to: ", to);
+            transport.send(message, to);
+        } catch (err) {
+            console.error(err)
+        }
+    } //  function sendSMS(message)
+
+    // alter data
+    for (const item of $data) {
+        item["number"] = item["number"] + 1;
+    }
+
+    if ($variables.count < 1) {
+        // send SMS
+        sendSMS("Test SMS alert message!!!!", "+39 347 ....")
+        $variables.count++
+    }
+
+    // return optionally changed data
+    return {
+        "data": $data,
+        "variables": $variables
+    }
+})();
+```
 
 ## Remote Execution ##
 
