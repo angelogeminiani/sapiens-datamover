@@ -74,6 +74,14 @@ PARAMETERS:
 
 For binary files, please look [here](./_build).
 
+### Stop the Panda 🐼 ###
+
+Data Mover works in background.
+
+To verify Data Mover is kicking and alive you can check the log file was updated.
+
+To stop Data Mover just copy or create an empty file names "stop" into workspace dir.
+
 ## How does Data Mover work ##
 
 ![](./_docs/slide_001.png)

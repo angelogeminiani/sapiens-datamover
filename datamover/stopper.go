@@ -5,9 +5,12 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_events"
 	"bitbucket.org/digi-sense/gg-core/gg_ticker"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"fmt"
 	"sync"
 	"time"
 )
+
+const EventStop = datamover_commons.EventOnDoStop
 
 // ---------------------------------------------------------------------------------------------------------------------
 //		t y p e
@@ -60,19 +63,28 @@ func (instance *stopMonitor) Stop() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 func (instance *stopMonitor) checkStop() {
-	if nil != instance && len(instance.stopCmd) > 0 {
-		instance.fileMux.Lock()
-		defer instance.fileMux.Unlock()
+	if nil != instance {
+		if len(instance.stopCmd) > 0 {
+			instance.fileMux.Lock()
+			defer instance.fileMux.Unlock()
 
-		cmd := instance.stopCmd
+			cmd := instance.stopCmd
 
-		// check if file exists
-		for _, root := range instance.roots {
-			cmdFile := gg.Paths.Concat(root, cmd)
-			if b, _ := gg.Paths.Exists(cmdFile); b {
-				_ = gg.IO.Remove(cmdFile)
-				instance.events.EmitAsync(datamover_commons.EventOnDoStop)
+			// check if file exists
+			for _, root := range instance.roots {
+				cmdFile := gg.Paths.Concat(root, cmd)
+				if b, _ := gg.Paths.Exists(cmdFile); b {
+					_ = gg.IO.Remove(cmdFile)
+					instance.events.EmitAsync(EventStop)
+				}
 			}
 		}
+		instance.tick()
 	}
+}
+
+func (instance *stopMonitor) tick() {
+	root := gg.Paths.WorkspacePath("")
+	filename := gg.Paths.Concat(root, "datamover.tick")
+	_, _ = gg.IO.WriteTextToFile(fmt.Sprintf("%v", time.Now()), filename)
 }

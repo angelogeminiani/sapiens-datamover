@@ -164,8 +164,15 @@ exit:
 		instance.logger.Error(fmt.Sprintf("ERROR starting '%s' v%s: %s",
 			datamover_commons.AppName, datamover_commons.AppVersion, err.Error()))
 	} else {
+		info := gg.Sys.GetInfo()
 		instance.logger.Info(fmt.Sprintf("STARTED '%s' v%s with jobs into dir: '%s'",
 			datamover_commons.AppName, datamover_commons.AppVersion, instance.settings.PathJobs))
+		instance.logger.Info(fmt.Sprintf("SYSTEM INFO: name=%v, kernel=%v, platform=%v, cpu=%v", info.Hostname, info.Kernel, info.Platform, info.CPUs))
+		instance.logger.Info(fmt.Sprintf("MEMORY INFO: %v", info.MemoryUsage))
+		process, e := gg.Sys.FindCurrentProcess()
+		if nil == e {
+			instance.logger.Info(fmt.Sprintf("CURRENT PROCESS PID: %v", process.Pid))
+		}
 	}
 	return
 }
