@@ -768,6 +768,10 @@ The Action declared into Job configuration file contains a field named `network`
 
 ![](./_docs/slide_002.png)
 
+## LEARN BY EXAMPLES ##
+
+Examples are [HERE](./_docs/examples/).
+
 ## Binaries ##
 
 Download binaries from this repository in [_build](./_build) directory.
