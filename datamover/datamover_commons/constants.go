@@ -3,7 +3,7 @@ package datamover_commons
 import "errors"
 
 const (
-	AppName    = "Data Mover"
+	AppName    = "Data Mover 🐼"
 	AppVersion = "0.1.9"
 
 	ModeProduction = "production"
