@@ -94,7 +94,7 @@ Each "job" contains:
 
 - Schedule: optional data to define WHEN the job must start
 - Transaction: an array of "Action" to define WHAT the job must do
-
+ 
 So, jobs define WHEN and WHAT about Data Mover.
 
 Let's start analyze the anatomy of a Data Mover job.
@@ -536,7 +536,9 @@ Let's take a look at configuration:
   },
   "command": "UPDATE users SET exported=true, exported_time='<var>date|iso</var>' WHERE id=@id",
   "scripts": {
-    "context": "./context.js"
+    "before": "",
+    "context": "./context.js",
+    "after": ""
   }
 }
 ```
@@ -549,6 +551,7 @@ each Action execution, adding some context data to runtime environment.
 Those context data are accessible to js runtime using some defined variables:
 
 - `$data`: represent an array of data row that are the result of an SQL command.
+- `$variables`: represent variables defined into settings or programmatically
 
 ---------------
 NOTE: the javascript engine is much more powerful and can send emails, SMS, dispatch messages over https, MQTT, and even
@@ -557,7 +560,35 @@ more. More documentation will come soon.
 
 SUPPORTED HOOKS:
 
+- `before`: is a script that is launched before a query or SQL command is executed. Use this to prepare or transform data before an INSERT or UPDATE
 - `context`: is a script that is launched when "transaction execution context is created"
+- `after`: is a script that is launched after a query or SQL command is executed
+
+**EXECUTION FLOW**
+
+Script execution order is always like:
+
+ - BEFORE
+ - CONTEXT
+ - AFTER
+
+There is a difference only when DataMover cycle on transaction task. 
+First action has no context, so the "context" script is executed after the SQL statement.
+
+This is how DataMover invoke scripts:
+
+FIRST ACTION:
+ - before
+ - SQL STATEMENT (retrieve data or execute command)
+ - context
+ - after
+
+OTHER ACTIONS:
+- before
+- context
+- SQL STATEMENT (retrieve data or execute command)
+- after
+
 
 ### Context Hook ###
 

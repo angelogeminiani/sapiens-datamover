@@ -74,7 +74,7 @@ func (instance *DataMoverTransaction) init() error {
 
 	if nil != instance.settings {
 		for _, setting := range instance.settings {
-			err := setting.NormalizeScripts(instance.root)
+			err := setting.ScriptsLoad(instance.root)
 			if nil != err {
 				instance.logger.Warn(err)
 			}

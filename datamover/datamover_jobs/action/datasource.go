@@ -19,6 +19,8 @@ type DataMoverDatasource struct {
 	fnVarEngine        *gg_fnvars.FnVarsEngine
 	connectionSettings *datamover_commons.DataMoverConnectionSettings
 	scriptContext      string
+	scriptBefore       string
+	scriptAfter        string
 
 	_db          *gorm.DB
 	schema       *schema.DataMoverDatasourceSchema
@@ -37,7 +39,9 @@ func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine,
 		instance.schema = instance.connectionSettings.Schema
 	}
 	if nil != scripts {
+		instance.scriptBefore = scripts.Before
 		instance.scriptContext = scripts.Context
+		instance.scriptAfter = scripts.After
 	}
 	err := instance.init()
 
@@ -55,7 +59,7 @@ func (instance *DataMoverDatasource) GetSchema() *schema.DataMoverDatasourceSche
 	return nil
 }
 
-func (instance *DataMoverDatasource) GetData(command string, mapping map[string]interface{}, context []map[string]interface{}, variables map[string]interface{}) ([]map[string]interface{}, error) {
+func (instance *DataMoverDatasource) GetData(command string, fieldsMapping map[string]interface{}, context []map[string]interface{}, variables map[string]interface{}) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
 
 	db, err := instance.connection()
@@ -72,24 +76,42 @@ func (instance *DataMoverDatasource) GetData(command string, mapping map[string]
 		if nil == fnErr {
 			command = fnRes
 		}
+
+		var scriptVars map[string]interface{}
+		// before retrieve data
+		result, scriptVars = instance.scriptEngine.RunWithArray("before", instance.scriptBefore, result, variables)
+		if len(scriptVars) > 0 {
+			gg.Maps.Merge(true, variables, scriptVars)
+		}
+		// retrieve data
 		result, err = query(db, command, variables)
 		if nil != err {
 			return nil, err
 		}
 		// context script
-		var scriptVars map[string]interface{}
 		result, scriptVars = instance.scriptEngine.RunWithArray("context", instance.scriptContext, result, variables)
 		if len(scriptVars) > 0 {
 			gg.Maps.Merge(true, variables, scriptVars)
 		}
+		// after all
+		result, scriptVars = instance.scriptEngine.RunWithArray("after", instance.scriptAfter, result, variables)
+		if len(scriptVars) > 0 {
+			gg.Maps.Merge(true, variables, scriptVars)
+		}
 	} else {
-
-		// context script
 		var scriptVars map[string]interface{}
+
+		// before retrieve data
+		context, scriptVars = instance.scriptEngine.RunWithArray("before", instance.scriptBefore, context, variables)
+		if len(scriptVars) > 0 {
+			gg.Maps.Merge(true, variables, scriptVars)
+		}
+		// context script
 		context, scriptVars = instance.scriptEngine.RunWithArray("context", instance.scriptContext, context, variables)
 		if len(scriptVars) > 0 {
 			gg.Maps.Merge(true, variables, scriptVars)
 		}
+		// add items to result
 		for _, data := range context {
 			if nil != data {
 				ctx := gg.Maps.Merge(false, map[string]interface{}{}, data, variables)
@@ -98,17 +120,23 @@ func (instance *DataMoverDatasource) GetData(command string, mapping map[string]
 				if nil == fnErr {
 					command = fnRes
 				}
-				statement := ToSQLStatement(command, data, mapping)
+				statement := ToSQLStatement(command, data, fieldsMapping)
+				// retrieve row data
 				r, e := query(db, statement, ctx)
 				if nil != e {
 					return nil, e
 				}
+
 				if len(r) == 0 {
 					result = append(result, data)
 				} else {
 					result = append(result, r...)
 				}
 			}
+		}
+		result, scriptVars = instance.scriptEngine.RunWithArray("after", instance.scriptAfter, result, variables)
+		if len(scriptVars) > 0 {
+			gg.Maps.Merge(true, variables, scriptVars)
 		}
 	}
 	return result, nil

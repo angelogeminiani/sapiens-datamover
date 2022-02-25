@@ -1,0 +1,90 @@
+{
+  "schedule": {
+    "start_at": "",
+    "timeline": "second:10"
+  },
+  "next_run": "",
+  "transaction": [
+    {
+      "uid": "source-tb1",
+      "description": "Select names from this table",
+      "network": null,
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./source.db",
+        "schema": null
+      },
+      "command": "SELECT * FROM tb1 LIMIT @vlimit OFFSET @voffset",
+      "fields_mapping": null,
+      "scripts": {
+        "context": "",
+        "before": "",
+        "after": "./after-tb1.js"
+      }
+    },
+    {
+      "uid": "source-tb2",
+      "description": "Select surnames from this table",
+      "network": null,
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./source.db",
+        "schema": null
+      },
+      "command": "SELECT * FROM tb2 LIMIT @vlimit OFFSET @voffset",
+      "fields_mapping": null,
+      "scripts": {
+        "context": "",
+        "before": "",
+        "after": "./after-tb2.js"
+      }
+    },
+    {
+      "uid": "target",
+      "description": "save source to target",
+      "network": null,
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./target.db",
+        "schema": {
+          "tables": [
+            {
+              "name": "users",
+              "columns": [
+                {
+                  "name": "ID",
+                  "nullable": false,
+                  "type": "integer",
+                  "tag": "primarykey"
+                },
+                {
+                  "name": "name",
+                  "nullable": true,
+                  "type": "TEXT",
+                  "tag": ""
+                },
+                {
+                  "name": "surname",
+                  "nullable": true,
+                  "type": "TEXT",
+                  "tag": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "command": "INSERT INTO users (...)",
+      "fields_mapping": null,
+      "scripts": {
+        "context": "",
+        "before": "./before-target.js",
+        "after": ""
+      }
+    }
+  ],
+  "variables": {
+    "vlimit": 1,
+    "voffset": 0
+  }
+}

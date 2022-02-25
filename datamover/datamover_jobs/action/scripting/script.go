@@ -5,7 +5,9 @@ import (
 	ggx "bitbucket.org/digi-sense/gg-core-x"
 	"bitbucket.org/digi-sense/gg-core-x/gg_log"
 	"bitbucket.org/digi-sense/gg-core-x/gg_scripting"
+	"bitbucket.org/digi-sense/gg-core-x/gg_scripting/commons"
 	"bitbucket.org/digi-sense/gg-core/gg_utils"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action/scripting/modules"
 	"fmt"
 	"path"
 )
@@ -42,8 +44,11 @@ func (instance *ScriptController) RunWithArray(name, script string, contextData 
 	}
 	env := &gg_scripting.EnvSettings{
 		EngineName:    "js",
-		ProgramName:   fmt.Sprintf(instance.dir, name),
+		ProgramName:   fmt.Sprintf("%s#%s", instance.dir, name),
 		ProgramScript: script,
+		OnReady: func(rtContext *commons.RuntimeContext) {
+			modules.EnableModuleDatasets(rtContext)
+		},
 		Context: map[string]interface{}{
 			"$data":      contextData,
 			"$variables": contextVariables,
@@ -65,6 +70,8 @@ func (instance *ScriptController) RunWithArray(name, script string, contextData 
 				variables = mm
 			}
 		}
+	} else {
+		instance.logger.Error(fmt.Sprintf("Error executing script '%s': %s", gg.Paths.FileName(script, true), err.Error()))
 	}
 
 	return
@@ -100,6 +107,8 @@ func (instance *ScriptController) RunWithRow(name, script string, contextData ma
 				variables = mm
 			}
 		}
+	} else {
+		instance.logger.Error(fmt.Sprintf("Error executing script '%s': %s", gg.Paths.FileName(script, true), err.Error()))
 	}
 
 	return
