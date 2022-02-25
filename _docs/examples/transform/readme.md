@@ -1,6 +1,6 @@
-# Sample for Data Transformation #
+# Example for Data Transformation #
 
-In this example we run three actions:
+In this example DataMover 🐼 run three actions:
 
  - `source-tb1`: SELECT all items from tb1 Table
  - `source-tb2`: SELECT all items from tb2 Table

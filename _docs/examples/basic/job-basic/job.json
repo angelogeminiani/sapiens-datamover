@@ -1,0 +1,115 @@
+{
+  "schedule": {
+    "start_at": "",
+    "timeline": "second:1"
+  },
+  "next_run": "",
+  "transaction": [
+    {
+      "uid": "source",
+      "description": "select data from source",
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./source.db"
+      },
+      "command": "SELECT * FROM users WHERE exported=false",
+      "scripts": {
+        "context": ""
+      }
+    },
+    {
+      "uid": "target",
+      "description": "save source to target",
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./target.db",
+        "schema": {
+          "tables": [
+            {
+              "name": "users",
+              "columns": [
+                {
+                  "name": "ID",
+                  "type": "integer",
+                  "nullable": false,
+                  "tag": "primarykey"
+                },
+                {
+                  "name": "created_at",
+                  "nullable": true,
+                  "type": "datetime",
+                  "tag": ""
+                },
+                {
+                  "name": "updated_at",
+                  "nullable": true,
+                  "type": "datetime",
+                  "tag": ""
+                },
+                {
+                  "name": "deleted_at",
+                  "nullable": true,
+                  "type": "datetime",
+                  "tag": ""
+                },
+                {
+                  "name": "uid",
+                  "nullable": true,
+                  "type": "TEXT",
+                  "tag": ""
+                },
+                {
+                  "name": "email",
+                  "nullable": true,
+                  "type": "TEXT",
+                  "tag": ""
+                },
+                {
+                  "name": "name",
+                  "nullable": true,
+                  "type": "TEXT",
+                  "tag": ""
+                },
+                {
+                  "name": "surname",
+                  "nullable": true,
+                  "type": "TEXT",
+                  "tag": ""
+                },
+                {
+                  "name": "number",
+                  "nullable": true,
+                  "type": "float",
+                  "tag": ""
+                },
+                {
+                  "name": "exported",
+                  "type": "boolean"
+                },
+                {
+                  "name": "exported_time",
+                  "type": "datetime"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "command": "INSERT INTO users (...) returning id",
+      "fields_mapping": null,
+      "scripts": {
+        "context": ""
+      }
+    },
+    {
+      "uid": "source-update",
+      "description": "write flag in source",
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./source.db"
+      },
+      "command": "UPDATE users SET exported=true, exported_time='<var>date|iso</var>' WHERE id=@id",
+      "script": ""
+    }
+  ]
+}
