@@ -79,14 +79,16 @@ func (instance *DataMoverActionSettings) ScriptsLoad(root string) (err error) {
 }
 
 func (instance *DataMoverActionSettings) ScriptsReset() {
-	if len(instance.Scripts.BeforeFile) > 0 {
-		instance.Scripts.Before = instance.Scripts.BeforeFile
-	}
-	if len(instance.Scripts.ContextFile) > 0 {
-		instance.Scripts.Context = instance.Scripts.ContextFile
-	}
-	if len(instance.Scripts.AfterFile) > 0 {
-		instance.Scripts.After = instance.Scripts.AfterFile
+	if nil != instance && nil != instance.Scripts {
+		if len(instance.Scripts.BeforeFile) > 0 {
+			instance.Scripts.Before = instance.Scripts.BeforeFile
+		}
+		if len(instance.Scripts.ContextFile) > 0 {
+			instance.Scripts.Context = instance.Scripts.ContextFile
+		}
+		if len(instance.Scripts.AfterFile) > 0 {
+			instance.Scripts.After = instance.Scripts.AfterFile
+		}
 	}
 }
 
