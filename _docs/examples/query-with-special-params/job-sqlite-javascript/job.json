@@ -1,0 +1,27 @@
+{
+  "schedule": {
+    "start_at": "",
+    "timeline": "seconds:10"
+  },
+  "next_run": "",
+  "transaction": [
+    {
+      "uid": "source",
+      "description": "",
+      "network": null,
+      "connection": {
+        "driver": "sqlite",
+        "dsn": "./data.db",
+        "schema": null
+      },
+      "command": "SELECT * FROM table1 WHERE name IN ( @@array )",
+      "fields_mapping": null,
+      "scripts": {
+        "context": "./script-context.js",
+        "before": "./script-before.js",
+        "after": "./script-after.js"
+      }
+    }
+  ],
+  "variables": {}
+}
