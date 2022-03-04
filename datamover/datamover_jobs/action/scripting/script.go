@@ -77,7 +77,8 @@ func (instance *ScriptController) RunWithArray(name, script string, contextData 
 	return
 }
 
-func (instance *ScriptController) RunWithRow(name, script string, contextData map[string]interface{}, contextVariables map[string]interface{}) (data, variables map[string]interface{}) {
+// not used
+func (instance *ScriptController) _RunWithRow(name, script string, contextData map[string]interface{}, contextVariables map[string]interface{}) (data, variables map[string]interface{}) {
 	data = contextData
 	variables = contextVariables
 	if len(script) == 0 {

@@ -46,6 +46,8 @@ func QueryGetParamNames(query string) []string {
 	query += " "
 	params := gg.Regex.TextBetweenStrings(query, "@", " ")
 	for _, param := range params {
+		// purge name from comma or other invalid delimiters
+		param = strings.TrimRight(param, ",.;:\n\r")
 		if gg.Arrays.IndexOf(param, response) == -1 {
 			response = append(response, param)
 		}
