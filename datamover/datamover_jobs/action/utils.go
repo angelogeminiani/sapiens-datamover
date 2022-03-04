@@ -41,10 +41,14 @@ func ToSQLStatement(source string, data map[string]interface{}, fieldsMapping ma
 
 // QueryGetParamNames return unique param names
 func QueryGetParamNames(query string) []string {
+	return getParamNames(query, "@")
+}
+
+func getParamNames(query, prefix string) []string {
 	response := make([]string, 0)
 	query = strings.ReplaceAll(query, ";", " ;")
 	query += " "
-	params := gg.Regex.TextBetweenStrings(query, "@", " ")
+	params := gg.Regex.TextBetweenStrings(query, prefix, " ")
 	for _, param := range params {
 		// purge name from comma or other invalid delimiters
 		param = strings.TrimRight(param, ",.;:\n\r")
@@ -53,6 +57,22 @@ func QueryGetParamNames(query string) []string {
 		}
 	}
 	return response
+}
+
+func QueryGetNamedArgs(command string, context map[string]interface{}) []interface{} {
+	args := make([]interface{}, 0)
+
+	// parse command to get sql parameters
+	params := QueryGetParamNames(command)
+	if len(params) > 0 {
+		for _, param := range params {
+			if v, b := context[param]; b {
+				args = append(args, sql.Named(param, v))
+			}
+		}
+	}
+
+	return args
 }
 
 func toSQLString(v interface{}) string {
@@ -75,6 +95,16 @@ func toSQLString(v interface{}) string {
 		} else {
 			return fmt.Sprintf("'%v'", v)
 		}
+	case reflect.Slice, reflect.Array:
+		var buf strings.Builder
+		a := gg.Convert.ToArray(v)
+		for i, av := range a {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			buf.WriteString(toSQLString(av))
+		}
+		return buf.String()
 	default:
 		return fmt.Sprintf("%v", v)
 	}
@@ -82,19 +112,14 @@ func toSQLString(v interface{}) string {
 
 func query(db *gorm.DB, command string, context map[string]interface{}) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
-	args := make([]interface{}, 0)
 
-	// parse command to get sql parameters
-	params := QueryGetParamNames(command)
-	if len(params) > 0 {
-		for _, param := range params {
-			if v, b := context[param]; b {
-				args = append(args, sql.Named(param, v))
-				// command = strings.ReplaceAll(command, fmt.Sprintf("@%s", param), "?")
-			}
-		}
-	}
+	// preprocess for @@variables
+	command = preProcessSpecials(command, context)
 
+	// get args
+	args := QueryGetNamedArgs(command, context)
+
+	// do query
 	tx := db.Raw(command, args...)
 	tx.Scan(&result)
 	if nil != tx.Error && !IsRecordNotFoundError(tx.Error) {
@@ -103,4 +128,18 @@ func query(db *gorm.DB, command string, context map[string]interface{}) ([]map[s
 			command))
 	}
 	return result, nil
+}
+
+func preProcessSpecials(command string, context map[string]interface{}) string {
+	specials := getParamNames(command, "@@")
+	if len(specials) > 0 {
+		// replace
+		for _, special := range specials {
+			if v, ok := context[special]; ok {
+				value := toSQLString(v)
+				command = strings.ReplaceAll(command, "@@"+special, value)
+			}
+		}
+	}
+	return command
 }

@@ -4,7 +4,7 @@ import "errors"
 
 const (
 	AppName    = "Data Mover 🐼"
-	AppVersion = "0.1.10"
+	AppVersion = "0.1.12"
 
 	ModeProduction = "production"
 	ModeDebug      = "debug"

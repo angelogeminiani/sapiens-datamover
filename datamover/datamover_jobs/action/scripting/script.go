@@ -42,18 +42,9 @@ func (instance *ScriptController) RunWithArray(name, script string, contextData 
 	if len(script) == 0 {
 		return
 	}
-	env := &gg_scripting.EnvSettings{
-		EngineName:    "js",
-		ProgramName:   fmt.Sprintf("%s#%s", instance.dir, name),
-		ProgramScript: script,
-		OnReady: func(rtContext *commons.RuntimeContext) {
-			modules.EnableModuleDatasets(rtContext)
-		},
-		Context: map[string]interface{}{
-			"$data":      contextData,
-			"$variables": contextVariables,
-		},
-	}
+
+	env := environment(fmt.Sprintf("%s#%s", instance.dir, name), script, data, variables)
+
 	ggx.Scripting.SetLogger(instance.logger)
 	response, err := ggx.Scripting.Run(env)
 
@@ -84,15 +75,9 @@ func (instance *ScriptController) _RunWithRow(name, script string, contextData m
 	if len(script) == 0 {
 		return
 	}
-	env := &gg_scripting.EnvSettings{
-		EngineName:    "js",
-		ProgramName:   fmt.Sprintf(instance.dir, name),
-		ProgramScript: script,
-		Context: map[string]interface{}{
-			"$data":      contextData,
-			"$variables": contextVariables,
-		},
-	}
+
+	env := environment(fmt.Sprintf(instance.dir, name), script, data, variables)
+
 	ggx.Scripting.SetLogger(instance.logger)
 	response, err := ggx.Scripting.Run(env)
 
@@ -139,4 +124,23 @@ func (instance *ScriptController) toMap(value string) map[string]interface{} {
 	var result map[string]interface{}
 	_ = gg.JSON.Read(value, &result)
 	return result
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+//	S T A T I C
+// ---------------------------------------------------------------------------------------------------------------------
+
+func environment(programName, script string, data interface{}, variables map[string]interface{}) *gg_scripting.EnvSettings {
+	return &gg_scripting.EnvSettings{
+		EngineName:    "js",
+		ProgramName:   programName,
+		ProgramScript: script,
+		OnReady: func(rtContext *commons.RuntimeContext) {
+			modules.EnableModuleDatasets(rtContext)
+		},
+		Context: map[string]interface{}{
+			"$data":      data,
+			"$variables": variables,
+		},
+	}
 }
