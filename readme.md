@@ -328,9 +328,11 @@ Data Mover officially supports databases MySQL, PostgreSQL, SQLite, SQL Server.
 Globals are special configuration parameters that are grouped in a single configuration file.
 
 Globals parameters are:
- - Connections: shared connections to use in jobs
- - Constants: similar to job variables, but cannot change value and are shared between all jobs. Constants can be used in QUERY, exactly like variables
 
+  - Connections: shared connections to use in jobs
+  - Constants: similar to job variables, but cannot change value and are shared between all jobs. Constants can be used in QUERY, exactly like variables
+
+SAMPLE **globals.debug.json** file:
 ```json
 {
   "constants": {
