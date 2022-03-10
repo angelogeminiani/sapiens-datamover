@@ -3,6 +3,7 @@ package message
 import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
 )
 
 type NetworkMessage struct {
@@ -34,6 +35,7 @@ type NetworkMessagePayload struct {
 	ActionConfig           *datamover_commons.DataMoverActionSettings `json:"settings"`
 	ActionContextData      []map[string]interface{}                   `json:"data"`
 	ActionContextVariables map[string]interface{}                     `json:"variables"`
+	ActionGlobals          *datamover_globals.Globals                 `json:"globals"`
 }
 
 func (instance *NetworkMessagePayload) String() string {

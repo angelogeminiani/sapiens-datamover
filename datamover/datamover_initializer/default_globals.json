@@ -1,0 +1,13 @@
+{
+  "constants": {
+    "sample_constant": "this is a sample constant"
+  },
+  "connections": [
+    {
+      "connections-id": "sqlite-001",
+      "driver": "sqlite",
+      "dsn": "./data.db",
+      "schema": null
+    }
+  ]
+}

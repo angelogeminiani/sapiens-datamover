@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_events"
 	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
 	"fmt"
 )
 
@@ -15,18 +16,20 @@ type DataMoverTransaction struct {
 	events    *gg_events.Emitter
 	settings  []*datamover_commons.DataMoverActionSettings
 	variables map[string]interface{}
+	globals   *datamover_globals.Globals
 
 	fnVarEngine *gg_fnvars.FnVarsEngine
 	transaction []*DataMoverAction
 }
 
-func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, settings []*datamover_commons.DataMoverActionSettings, variables map[string]interface{}) (instance *DataMoverTransaction, err error) {
+func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, settings []*datamover_commons.DataMoverActionSettings, variables map[string]interface{}, globals *datamover_globals.Globals) (instance *DataMoverTransaction, err error) {
 	instance = new(DataMoverTransaction)
 	instance.root = root
 	instance.logger = logger
 	instance.events = events
 	instance.settings = settings
 	instance.variables = variables
+	instance.globals = globals
 
 	err = instance.init()
 
@@ -78,7 +81,7 @@ func (instance *DataMoverTransaction) init() error {
 			if nil != err {
 				instance.logger.Warn(err)
 			}
-			action, actionErr := NewDataMoverAction(instance.root, instance.fnVarEngine, setting)
+			action, actionErr := NewDataMoverAction(instance.root, instance.fnVarEngine, setting, instance.globals)
 			if nil != actionErr {
 				return actionErr
 			}

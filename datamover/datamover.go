@@ -144,7 +144,7 @@ func LaunchApplication(mode, cmdStop string, args ...interface{}) (instance *Dat
 
 		// JOBS
 		instance.jobs, err = datamover_jobs.NewDataMoverJobsController(
-			mode == "debug", instance.settings.PathJobs,
+			mode, instance.settings.PathJobs,
 			instance.logger, instance.events)
 		if nil != err {
 			goto exit

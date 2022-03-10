@@ -5,6 +5,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_events"
 	"bitbucket.org/digi-sense/gg-core/gg_utils"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
 	"fmt"
 	"path"
 )
@@ -15,19 +16,20 @@ type DataMoverJobsController struct {
 	logger  *datamover_commons.Logger
 	events  *gg_events.Emitter
 
-	closed bool
-	jobs   []*DataMoverJob
+	closed  bool
+	globals *datamover_globals.Globals
+	jobs    []*DataMoverJob
 }
 
-func NewDataMoverJobsController(debug bool, root string, logger *datamover_commons.Logger, events *gg_events.Emitter) (instance *DataMoverJobsController, err error) {
+func NewDataMoverJobsController(mode string, root string, logger *datamover_commons.Logger, events *gg_events.Emitter) (instance *DataMoverJobsController, err error) {
 	instance = new(DataMoverJobsController)
-	instance.isDebug = debug
+	instance.isDebug = mode == "debug"
 	instance.root = gg.Paths.WorkspacePath(root)
 	instance.logger = logger
 	instance.events = events
 	instance.closed = true
 
-	err = instance.init()
+	err = instance.init(mode)
 
 	return
 }
@@ -79,7 +81,7 @@ func (instance *DataMoverJobsController) Run(name string, contextData []map[stri
 //	p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *DataMoverJobsController) init() (err error) {
+func (instance *DataMoverJobsController) init(mode string) (err error) {
 
 	// creates root if any
 	err = gg.Paths.Mkdir(instance.root + gg_utils.OS_PATH_SEPARATOR)
@@ -87,15 +89,16 @@ func (instance *DataMoverJobsController) init() (err error) {
 		return
 	}
 
-	count := 0
+	instance.globals = datamover_globals.NewGlobals(mode)
 	instance.logger.Debug(fmt.Sprintf("Loading JOBS from: %s", instance.root))
 
+	count := 0
 	// load jobs
 	var dirs []string
 	dirs, err = gg.Paths.ListDir(instance.root)
 	if nil == err {
 		for _, dir := range dirs {
-			job, jerr := NewDataMoverJob(instance.isDebug, dir, instance.events)
+			job, jerr := NewDataMoverJob(instance.isDebug, dir, instance.events, instance.globals)
 			if nil == jerr {
 				count++
 				instance.logger.Debug(fmt.Sprintf("  * Loaded JOB '%s' (scheduled=%v).", path.Base(dir), job.IsScheduled()))

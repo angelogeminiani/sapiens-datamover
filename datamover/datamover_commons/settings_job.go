@@ -108,9 +108,10 @@ type DataMoverNetworkSettings struct {
 }
 
 type DataMoverConnectionSettings struct {
-	Driver string                            `json:"driver"`
-	Dsn    string                            `json:"dsn"`
-	Schema *schema.DataMoverDatasourceSchema `json:"schema"`
+	ConnectionsId string                            `json:"connections-id"`
+	Driver        string                            `json:"driver"`
+	Dsn           string                            `json:"dsn"`
+	Schema        *schema.DataMoverDatasourceSchema `json:"schema"`
 }
 
 func (instance *DataMoverNetworkSettings) Uri() (uri *url.URL, err error) {

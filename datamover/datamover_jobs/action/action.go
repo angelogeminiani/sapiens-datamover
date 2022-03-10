@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action/schema"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/clients"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/message"
@@ -17,17 +18,27 @@ type DataMoverAction struct {
 	actionSettings *datamover_commons.DataMoverActionSettings
 	datasource     *DataMoverDatasource
 	clientNet      clients.ClientNetwork
+	globals        *datamover_globals.Globals
 }
 
-func NewDataMoverAction(root string, fnVarEngine *gg_fnvars.FnVarsEngine, datasourceSettings *datamover_commons.DataMoverActionSettings) (instance *DataMoverAction, err error) {
+func NewDataMoverAction(root string, fnVarEngine *gg_fnvars.FnVarsEngine, datasourceSettings *datamover_commons.DataMoverActionSettings, globals *datamover_globals.Globals) (instance *DataMoverAction, err error) {
 	instance = new(DataMoverAction)
 	instance.root = root
 	instance.actionSettings = datasourceSettings
+	instance.globals = globals
 
 	if nil != datasourceSettings {
 		instance.uid = datasourceSettings.Uid
+		connection := datasourceSettings.Connection
+		if len(connection.ConnectionsId) > 0 && instance.globals.HasConnections() {
+			// replace with global connection
+			conn := instance.globals.GetConnection(connection.ConnectionsId)
+			if nil != conn {
+				connection = conn
+			}
+		}
 		instance.datasource, err = NewDataMoverDatasource(root, fnVarEngine,
-			datasourceSettings.Connection, datasourceSettings.Scripts)
+			connection, datasourceSettings.Scripts)
 		// init the action
 		if nil == err {
 			err = instance.init()
@@ -73,6 +84,7 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 			payload.ActionConfig = instance.actionSettings
 			payload.ActionContextData = contextData
 			payload.ActionContextVariables = variables
+			payload.ActionGlobals = instance.globals
 			respData, respErr := instance.clientNet.Send(payload.String())
 			if nil != respErr {
 				err = respErr
@@ -86,7 +98,7 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 		command := instance.actionSettings.Command
 		if len(command) > 0 {
 			mapping := instance.actionSettings.FieldsMapping
-			result, err = instance.datasource.GetData(command, mapping, contextData, variables)
+			result, err = instance.datasource.GetData(command, mapping, contextData, instance.globals.MergeVariables(variables))
 		}
 	}
 

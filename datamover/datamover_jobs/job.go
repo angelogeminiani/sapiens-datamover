@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core/gg_events"
 	"bitbucket.org/digi-sense/gg-core/gg_scheduler"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action"
 	"fmt"
 	"path"
@@ -15,6 +16,7 @@ type DataMoverJob struct {
 	isDebug bool
 	root    string
 	logger  *gg_log.Logger
+	globals *datamover_globals.Globals
 	events  *gg_events.Emitter
 
 	name         string
@@ -23,10 +25,11 @@ type DataMoverJob struct {
 	_transaction *action.DataMoverTransaction
 }
 
-func NewDataMoverJob(debug bool, root string, events *gg_events.Emitter) (instance *DataMoverJob, err error) {
+func NewDataMoverJob(debug bool, root string, events *gg_events.Emitter, globals *datamover_globals.Globals) (instance *DataMoverJob, err error) {
 	instance = new(DataMoverJob)
 	instance.isDebug = debug
 	instance.root = root
+	instance.globals = globals
 	instance.events = events
 
 	err = instance.init()
@@ -164,7 +167,7 @@ func (instance *DataMoverJob) transaction() (*action.DataMoverTransaction, error
 	if nil == instance._transaction {
 		if nil != instance.settings {
 			instance._transaction, err = action.NewDataMoverTransaction(instance.root, instance.logger,
-				instance.events, instance.settings.Transaction, instance.settings.Variables)
+				instance.events, instance.settings.Transaction, instance.settings.Variables, instance.globals)
 		} else {
 			return nil, gg.Errors.Prefix(datamover_commons.PanicSystemError,
 				fmt.Sprintf("Misconfiguration in JOB '%s' settings", instance.name))

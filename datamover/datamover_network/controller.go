@@ -148,8 +148,9 @@ func executeAction(payload *message.NetworkMessagePayload) interface{} {
 	context := payload.ActionContextData
 	variables := payload.ActionContextVariables
 	settings := payload.ActionConfig
+	globals := payload.ActionGlobals
 	settings.Network = nil // remove network setting to avoid remote execution
-	exec, err := action.NewDataMoverAction(root, fnvars, settings)
+	exec, err := action.NewDataMoverAction(root, fnvars, settings, globals)
 	if nil != err {
 		return err
 	}

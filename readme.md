@@ -287,7 +287,7 @@ That's all. We just wrote three simple ACTIONs and the panda 🐼 did all the jo
 
 Data Mover officially supports databases MySQL, PostgreSQL, SQLite, SQL Server.
 
-### MySQL ###
+#### MySQL ####
 
 ```
 {
@@ -296,7 +296,7 @@ Data Mover officially supports databases MySQL, PostgreSQL, SQLite, SQL Server.
 }
 ```
 
-### PostgreSQL ###
+#### PostgreSQL ####
 
 ```
 {
@@ -305,7 +305,7 @@ Data Mover officially supports databases MySQL, PostgreSQL, SQLite, SQL Server.
 }
 ```
 
-### SQLite ###
+#### SQLite ####
 
 ```
 {
@@ -314,7 +314,7 @@ Data Mover officially supports databases MySQL, PostgreSQL, SQLite, SQL Server.
 }
 ```
 
-### SQL Server ###
+#### SQL Server ####
 
 ```
 {
@@ -322,6 +322,46 @@ Data Mover officially supports databases MySQL, PostgreSQL, SQLite, SQL Server.
     "dsn": "sqlserver://user:passwordxxx@localhost:9930?database=test"
 }
 ```
+
+### Globals ###
+
+Globals are special configuration parameters that are grouped in a single configuration file.
+
+Globals parameters are:
+ - Connections: shared connections to use in jobs
+ - Constants: similar to job variables, but cannot change value and are shared between all jobs. Constants can be used in QUERY, exactly like variables
+
+```json
+{
+  "constants": {
+    "sample_constant": "this is a sample constant"
+  },
+  "connections": [
+    {
+      "connections-id": "sqlite-001",
+      "driver": "sqlite",
+      "dsn": "./data.db",
+      "schema": null
+    }
+  ]
+}
+```
+
+If you want to use a connection in a job, just set the "connections-id" value into job:
+
+```json
+{
+  "uid": "source-update",
+  "description": "write flag in source",
+  "connection": {
+    "connections-id": "sqlite-001"
+  },
+  "command": "UPDATE users SET exported=true, exported_time='<var>date|iso</var>' WHERE id=@id",
+  "scripts": {}
+}
+```
+
+
 
 ### Schema Migration ###
 
