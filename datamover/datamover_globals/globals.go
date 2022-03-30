@@ -13,7 +13,6 @@ type Globals struct {
 
 func NewGlobals(mode string) (instance *Globals) {
 	instance = new(Globals)
-	instance.settings = new(DataMoverGlobalsSettings)
 
 	instance.init(mode)
 
@@ -49,9 +48,11 @@ func (instance *Globals) GetConnection(id string) *datamover_commons.DataMoverCo
 }
 
 func (instance *Globals) MergeVariables(variables map[string]interface{}) map[string]interface{} {
-	if len(instance.settings.Constants) > 0 {
-		// add constants to variables
-		return gg.Maps.Merge(false, variables, instance.settings.Constants)
+	if nil != instance && nil != instance.settings {
+		if len(instance.settings.Constants) > 0 {
+			// add constants to variables
+			return gg.Maps.Merge(false, variables, instance.settings.Constants)
+		}
 	}
 	return variables
 }
@@ -64,5 +65,8 @@ func (instance *Globals) init(mode string) {
 	filename := gg.Paths.WorkspacePath(fmt.Sprintf("globals.%s.json", mode))
 	if ok, _ := gg.Paths.Exists(filename); ok {
 		_ = gg.JSON.ReadFromFile(filename, instance.settings)
+	}
+	if nil == instance.settings {
+		instance.settings = new(DataMoverGlobalsSettings)
 	}
 }

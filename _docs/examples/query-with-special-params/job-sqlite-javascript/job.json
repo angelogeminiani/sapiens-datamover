@@ -1,7 +1,7 @@
 {
   "schedule": {
     "start_at": "",
-    "timeline": "seconds:10"
+    "timeline": ""
   },
   "next_run": "",
   "transaction": [
