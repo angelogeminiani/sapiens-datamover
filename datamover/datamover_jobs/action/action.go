@@ -18,7 +18,7 @@ type DataMoverAction struct {
 
 	actionSettings *datamover_commons.DataMoverActionSettings
 	datasource     *DataMoverDatasource
-	clientNet      clients.ClientNetwork
+	_clientNet     clients.ClientNetwork
 	globals        *datamover_globals.Globals
 }
 
@@ -79,7 +79,8 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 
 	if instance.IsNetworkAction() {
 		// REMOTE
-		if nil != instance.clientNet {
+		client, e := instance.getClientNet()
+		if nil != client {
 			payload := new(message.NetworkMessagePayload)
 			payload.ActionName = "net-command"
 			payload.ActionRoot = instance.root
@@ -91,8 +92,11 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 			payload.ActionDatasets = LoadJsDatasets(instance.root) // load datasets for remote transfer
 
 			// execute
-			respData, respErr := instance.clientNet.Send(payload.String())
+			respData, respErr := client.Send(payload.String())
 			if nil != respErr {
+				if strings.HasPrefix(respErr.Error(), "dial tcp") {
+					instance._clientNet = nil // reset client
+				}
 				err = respErr
 				return
 			}
@@ -109,6 +113,8 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 				// read the body
 				err = gg.JSON.Read(gg.Convert.ToString(res.Body), &result)
 			}
+		} else {
+			err = e
 		}
 	} else {
 		// LOCAL
@@ -126,34 +132,40 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 //	p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *DataMoverAction) init() error {
-	_, err := instance.datasource.connection()
+func (instance *DataMoverAction) init() (err error) {
+	_, err = instance.datasource.connection()
 	if nil != err {
-		return err
+		return
 	}
 
-	err = instance.initNetwork()
-	if nil != err {
-		return err
-	}
+	_ = instance.initNetwork() // network is lazy initialized
 
-	return nil
+	return
 }
 
-func (instance *DataMoverAction) initNetwork() error {
+func (instance *DataMoverAction) initNetwork() (err error) {
 	if instance.IsNetworkAction() {
+		_, err = instance.getClientNet() // test connection
+	}
+	return
+}
+
+func (instance *DataMoverAction) getClientNet() (clients.ClientNetwork, error) {
+	if instance.IsNetworkAction() && nil == instance._clientNet {
 		uri, err := instance.actionSettings.Network.Uri()
 		if nil != err {
-			return err
+			instance._clientNet = nil
+			return instance._clientNet, err
 		}
 		c, e := clients.BuildNetworkClient(uri,
 			instance.actionSettings.Network)
 		if nil != e {
-			return e
+			instance._clientNet = nil
+			return instance._clientNet, e
 		}
-		instance.clientNet = c
+		instance._clientNet = c
 	}
-	return nil
+	return instance._clientNet, nil
 }
 
 func (instance *DataMoverAction) connection() (*gorm.DB, error) {

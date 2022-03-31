@@ -42,7 +42,7 @@ func (instance *DataMoverActionSettings) ScriptsLoad(root string) (err error) {
 	if nil != instance.Scripts {
 
 		// BEFORE
-		if len(instance.Scripts.Before) > 0 && strings.Index(instance.Scripts.Before, ".") == 0 {
+		if existsFile(root, instance.Scripts.Before) {
 			instance.Scripts.BeforeFile = instance.Scripts.Before
 			t, e := gg.IO.ReadTextFromFile(gg.Paths.Concat(root, instance.Scripts.BeforeFile))
 			if nil != e {
@@ -53,7 +53,7 @@ func (instance *DataMoverActionSettings) ScriptsLoad(root string) (err error) {
 			}
 		}
 		// CONTEXT
-		if len(instance.Scripts.Context) > 0 && strings.Index(instance.Scripts.Context, ".") == 0 {
+		if existsFile(root, instance.Scripts.Context) {
 			instance.Scripts.ContextFile = instance.Scripts.Context
 			t, e := gg.IO.ReadTextFromFile(gg.Paths.Concat(root, instance.Scripts.ContextFile))
 			if nil != e {
@@ -64,7 +64,7 @@ func (instance *DataMoverActionSettings) ScriptsLoad(root string) (err error) {
 			}
 		}
 		// AFTER
-		if len(instance.Scripts.After) > 0 && strings.Index(instance.Scripts.After, ".") == 0 {
+		if existsFile(root, instance.Scripts.After) {
 			instance.Scripts.AfterFile = instance.Scripts.After
 			t, e := gg.IO.ReadTextFromFile(gg.Paths.Concat(root, instance.Scripts.AfterFile))
 			if nil != e {
@@ -118,4 +118,16 @@ func (instance *DataMoverNetworkSettings) Uri() (uri *url.URL, err error) {
 	text := instance.Host // nio://127.0.0.1:10001
 	uri, err = url.Parse(text)
 	return
+}
+
+func existsFile(root, text string) bool {
+	if strings.Index(text, ".") == 0 &&
+		strings.Index(text, "(") == -1 &&
+		strings.Index(text, "{") == -1 {
+		filename := gg.Paths.Concat(root, text)
+		if ok, _ := gg.Paths.Exists(filename); ok {
+			return true
+		}
+	}
+	return false
 }

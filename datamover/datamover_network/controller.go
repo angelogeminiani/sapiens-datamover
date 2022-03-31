@@ -149,7 +149,7 @@ func (instance *DataMoverNetworkController) handleMessage(networkMessage *messag
 func (instance *DataMoverNetworkController) executeAction(payload *message.NetworkMessagePayload) (response interface{}) {
 	root := gg.Paths.WorkspacePath(payload.ActionRootRelative)
 	_ = gg.Paths.Mkdir(root)
-	fnvars := gg.FnVars.NewEngine()
+
 	context := payload.ActionContextData
 	variables := payload.ActionContextVariables
 	settings := payload.ActionConfig
@@ -164,6 +164,7 @@ func (instance *DataMoverNetworkController) executeAction(payload *message.Netwo
 	settings.Network = nil
 
 	// check local globals
+	// remote globals are used only if locally there are no globals
 	locGlobals := datamover_globals.NewGlobals(instance.mode)
 	if nil == globals || (nil != locGlobals && locGlobals.HasConnections()) {
 		// load globals from local
@@ -171,6 +172,7 @@ func (instance *DataMoverNetworkController) executeAction(payload *message.Netwo
 	}
 
 	// execute the remote command
+	fnvars := gg.FnVars.NewEngine()
 	exec, err := action.NewDataMoverAction(root, fnvars, settings, globals)
 	if nil != err {
 		return err
