@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/clients"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/message"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type DataMoverAction struct {
@@ -81,17 +82,32 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 		if nil != instance.clientNet {
 			payload := new(message.NetworkMessagePayload)
 			payload.ActionRoot = instance.root
+			payload.ActionRootRelative = strings.ReplaceAll(instance.root, gg.Paths.WorkspacePath("./"), ".")
 			payload.ActionConfig = instance.actionSettings
 			payload.ActionContextData = contextData
 			payload.ActionContextVariables = variables
 			payload.ActionGlobals = instance.globals
+			payload.ActionDatasets = LoadJsDatasets(instance.root) // load datasets for remote transfer
+
+			// execute
 			respData, respErr := instance.clientNet.Send(payload.String())
 			if nil != respErr {
 				err = respErr
 				return
 			}
 			// deserialize
-			err = gg.JSON.Read(gg.Convert.ToString(respData), &result)
+			var res *message.NetworkMessageResponseBody
+			err = gg.JSON.Read(gg.Convert.ToString(respData), &res)
+			if nil == err {
+				// align datasets
+				if nil != res.Datasets && len(res.Datasets) > 0 {
+					OverwriteJsDatasets(instance.root, res.Datasets)
+				}
+				// align variables
+				gg.Maps.Merge(true, variables, res.Variables)
+				// read the body
+				err = gg.JSON.Read(gg.Convert.ToString(res.Body), &result)
+			}
 		}
 	} else {
 		// LOCAL

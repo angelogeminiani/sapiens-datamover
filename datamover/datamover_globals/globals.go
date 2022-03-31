@@ -64,7 +64,7 @@ func (instance *Globals) MergeVariables(variables map[string]interface{}) map[st
 func (instance *Globals) init(mode string) {
 	filename := gg.Paths.WorkspacePath(fmt.Sprintf("globals.%s.json", mode))
 	if ok, _ := gg.Paths.Exists(filename); ok {
-		_ = gg.JSON.ReadFromFile(filename, instance.settings)
+		_ = gg.JSON.ReadFromFile(filename, &instance.settings)
 	}
 	if nil == instance.settings {
 		instance.settings = new(DataMoverGlobalsSettings)

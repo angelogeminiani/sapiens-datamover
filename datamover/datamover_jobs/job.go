@@ -150,12 +150,17 @@ func (instance *DataMoverJob) initScheduler() bool {
 			Arguments: schedule.Arguments,
 		})
 		instance.scheduler.OnSchedule(func(schedule *gg_scheduler.SchedulerTask) {
+			defer func() {
+				if r := recover(); r != nil {
+					instance.scheduler.Resume()
+				}
+			}()
 			instance.scheduler.Pause()
-			defer instance.scheduler.Resume()
 			err := instance.run(nil, nil)
 			if nil != err {
 				instance.logger.Error(err)
 			}
+			instance.scheduler.Resume()
 		})
 		return true
 	}

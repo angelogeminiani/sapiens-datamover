@@ -142,22 +142,37 @@ func (instance *DataMoverNetworkController) handleMessage(networkMessage *messag
 	return executeAction(&payload)
 }
 
-func executeAction(payload *message.NetworkMessagePayload) interface{} {
-	root := payload.ActionRoot
+func executeAction(payload *message.NetworkMessagePayload) (response interface{}) {
+	root := gg.Paths.WorkspacePath(payload.ActionRootRelative)
+	_ = gg.Paths.Mkdir(root)
 	fnvars := gg.FnVars.NewEngine()
 	context := payload.ActionContextData
 	variables := payload.ActionContextVariables
 	settings := payload.ActionConfig
 	globals := payload.ActionGlobals
-	settings.Network = nil // remove network setting to avoid remote execution
+	datasets := payload.ActionDatasets
+
+	// align datasets
+	if len(datasets) > 0 {
+		action.OverwriteJsDatasets(root, datasets)
+	}
+	// remove network setting to avoid remote execution
+	settings.Network = nil
+
+	// execute the remote command
 	exec, err := action.NewDataMoverAction(root, fnvars, settings, globals)
 	if nil != err {
 		return err
 	}
 	respData, respErr := exec.Execute(context, variables)
 	if nil != respErr {
-		return respErr
+		response = respErr
+	} else {
+		response = new(message.NetworkMessageResponseBody)
+		response.(*message.NetworkMessageResponseBody).Body = respData
+		response.(*message.NetworkMessageResponseBody).Variables = variables
+		response.(*message.NetworkMessageResponseBody).Datasets = action.LoadJsDatasets(root)
 	}
 
-	return respData
+	return
 }

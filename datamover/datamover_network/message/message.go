@@ -32,12 +32,21 @@ func (instance *NetworkMessage) GetAuthorization() string {
 
 type NetworkMessagePayload struct {
 	ActionRoot             string                                     `json:"root"`
+	ActionRootRelative     string                                     `json:"root_relative"`
 	ActionConfig           *datamover_commons.DataMoverActionSettings `json:"settings"`
 	ActionContextData      []map[string]interface{}                   `json:"data"`
 	ActionContextVariables map[string]interface{}                     `json:"variables"`
 	ActionGlobals          *datamover_globals.Globals                 `json:"globals"`
+	ActionDatasets         map[string][]interface{}                   `json:"js_datasets"`
 }
 
 func (instance *NetworkMessagePayload) String() string {
 	return gg.JSON.Stringify(instance)
+}
+
+// NetworkMessageResponseBody wrap the response body
+type NetworkMessageResponseBody struct {
+	Body      interface{}              `json:"body"`
+	Variables map[string]interface{}   `json:"variables"`
+	Datasets  map[string][]interface{} `json:"js_datasets"`
 }

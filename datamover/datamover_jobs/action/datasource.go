@@ -70,6 +70,7 @@ func (instance *DataMoverDatasource) GetData(command string, fieldsMapping map[s
 		return nil, err
 	}
 
+	var scriptVars map[string]interface{}
 	if nil == context {
 		// solve fnvars
 		fnRes, fnErr := instance.fnVarEngine.SolveText(command)
@@ -77,7 +78,6 @@ func (instance *DataMoverDatasource) GetData(command string, fieldsMapping map[s
 			command = fnRes
 		}
 
-		var scriptVars map[string]interface{}
 		// before retrieve data
 		result, scriptVars = instance.scriptEngine.RunWithArray("before", instance.scriptBefore, result, variables)
 		if len(scriptVars) > 0 {
@@ -99,7 +99,6 @@ func (instance *DataMoverDatasource) GetData(command string, fieldsMapping map[s
 			gg.Maps.Merge(true, variables, scriptVars)
 		}
 	} else {
-		var scriptVars map[string]interface{}
 
 		// before retrieve data
 		context, scriptVars = instance.scriptEngine.RunWithArray("before", instance.scriptBefore, context, variables)

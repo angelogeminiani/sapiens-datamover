@@ -44,6 +44,21 @@ func QueryGetParamNames(query string) []string {
 	return getParamNames(query, "@")
 }
 
+func LoadJsDatasets(root string) (response map[string][]interface{}) {
+	response = make(map[string][]interface{})
+	filename := gg.Paths.Concat(root, "datasets.json")
+	if ok, _ := gg.Paths.Exists(filename); ok {
+		_ = gg.JSON.ReadFromFile(filename, &response)
+	}
+	return
+}
+
+func OverwriteJsDatasets(root string, datasets map[string][]interface{}) {
+	filename := gg.Paths.Concat(root, "datasets.json")
+	_ = gg.Paths.Mkdir(filename)
+	_, _ = gg.IO.WriteTextToFile(gg.JSON.Stringify(datasets), filename)
+}
+
 func getParamNames(query, prefix string) []string {
 	response := make([]string, 0)
 	query = strings.ReplaceAll(query, ";", " ;")
