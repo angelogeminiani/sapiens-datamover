@@ -31,6 +31,7 @@ func (instance *NetworkMessage) GetAuthorization() string {
 }
 
 type NetworkMessagePayload struct {
+	ActionName             string                                     `json:"name"`
 	ActionRoot             string                                     `json:"root"`
 	ActionRootRelative     string                                     `json:"root_relative"`
 	ActionConfig           *datamover_commons.DataMoverActionSettings `json:"settings"`

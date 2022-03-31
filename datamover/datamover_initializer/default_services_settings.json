@@ -12,6 +12,59 @@
       "protocol_configuration": {
         "port": 10001
       }
+    },
+    {
+      "enabled": false,
+      "name": "WEB SERVER",
+      "protocol": "http",
+      "protocol_configuration": {
+        "root": "./webserver",
+        "server": {
+          "enable_request_id": true,
+          "prefork": false
+        },
+        "hosts": [
+          {
+            "addr": ":9090",
+            "tls": false,
+            "websocket": {
+              "enabled": true
+            }
+          },
+          {
+            "addr": ":9091",
+            "tls": true,
+            "ssl_cert": "./cert/ssl-cert.pem",
+            "ssl_key": "./cert/ssl-cert.key",
+            "websocket": {
+              "enabled": true
+            }
+          }
+        ],
+        "static": [
+          {
+            "enabled": true,
+            "prefix": "/",
+            "root": "./www",
+            "index": "",
+            "compress": true
+          }
+        ],
+        "compression": {
+          "enabled": false,
+          "level": 0
+        },
+        "limiter": {
+          "enabled": false,
+          "timeout": 30,
+          "max": 10
+        },
+        "CORS": {
+          "enabled": true
+        }
+      }
     }
+  ],
+  "handlers": [
   ]
 }

@@ -81,6 +81,7 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 		// REMOTE
 		if nil != instance.clientNet {
 			payload := new(message.NetworkMessagePayload)
+			payload.ActionName = "net-command"
 			payload.ActionRoot = instance.root
 			payload.ActionRootRelative = strings.ReplaceAll(instance.root, gg.Paths.WorkspacePath("./"), ".")
 			payload.ActionConfig = instance.actionSettings

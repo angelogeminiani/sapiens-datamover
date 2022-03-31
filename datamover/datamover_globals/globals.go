@@ -35,13 +35,18 @@ func (instance *Globals) Clone() *Globals {
 }
 
 func (instance *Globals) HasConnections() bool {
-	return len(instance.settings.Connections) > 0
+	if nil != instance && nil != instance.settings {
+		return len(instance.settings.Connections) > 0
+	}
+	return false
 }
 
 func (instance *Globals) GetConnection(id string) *datamover_commons.DataMoverConnectionSettings {
-	for _, conn := range instance.settings.Connections {
-		if strings.ToLower(id) == strings.ToLower(conn.ConnectionsId) {
-			return conn
+	if nil != instance && nil != instance.settings {
+		for _, conn := range instance.settings.Connections {
+			if strings.ToLower(id) == strings.ToLower(conn.ConnectionsId) {
+				return conn
+			}
 		}
 	}
 	return nil

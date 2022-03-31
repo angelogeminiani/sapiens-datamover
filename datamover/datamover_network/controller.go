@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-core/gg_events"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/message"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/services"
@@ -11,6 +12,7 @@ import (
 )
 
 type DataMoverNetworkController struct {
+	mode   string
 	logger *datamover_commons.Logger
 	events *gg_events.Emitter
 
@@ -23,6 +25,7 @@ type DataMoverNetworkController struct {
 
 func NewDataMoverNetworkController(mode string, logger *datamover_commons.Logger, events *gg_events.Emitter) (instance *DataMoverNetworkController, err error) {
 	instance = new(DataMoverNetworkController)
+	instance.mode = mode
 	instance.enabled = false
 	instance.closed = false
 	instance.logger = logger
@@ -139,10 +142,11 @@ func (instance *DataMoverNetworkController) handleMessage(networkMessage *messag
 	}
 
 	// ready to handle message
-	return executeAction(&payload)
+	return instance.executeAction(&payload)
 }
 
-func executeAction(payload *message.NetworkMessagePayload) (response interface{}) {
+// execute remote action locally
+func (instance *DataMoverNetworkController) executeAction(payload *message.NetworkMessagePayload) (response interface{}) {
 	root := gg.Paths.WorkspacePath(payload.ActionRootRelative)
 	_ = gg.Paths.Mkdir(root)
 	fnvars := gg.FnVars.NewEngine()
@@ -158,6 +162,13 @@ func executeAction(payload *message.NetworkMessagePayload) (response interface{}
 	}
 	// remove network setting to avoid remote execution
 	settings.Network = nil
+
+	// check local globals
+	locGlobals := datamover_globals.NewGlobals(instance.mode)
+	if nil == globals || (nil != locGlobals && locGlobals.HasConnections()) {
+		// load globals from local
+		globals = locGlobals
+	}
 
 	// execute the remote command
 	exec, err := action.NewDataMoverAction(root, fnvars, settings, globals)
