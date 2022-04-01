@@ -9,6 +9,7 @@ import (
 
 type ServiceNio struct {
 	name          string
+	handlers      *DataMoverHandlers
 	logger        *datamover_commons.Logger
 	uid           string
 	enabled       bool
@@ -19,9 +20,10 @@ type ServiceNio struct {
 	server   *gg_nio.NioServer
 }
 
-func NewServiceNio(name string, configuration map[string]interface{}, logger *datamover_commons.Logger) (instance *ServiceNio, err error) {
+func NewServiceNio(name string, configuration map[string]interface{}, handlers *DataMoverHandlers, logger *datamover_commons.Logger) (instance *ServiceNio, err error) {
 	instance = new(ServiceNio)
 	instance.name = name
+	instance.handlers = handlers
 	instance.logger = logger
 
 	err = instance.init(configuration)

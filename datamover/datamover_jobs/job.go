@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-core-x/gg_log"
 	"bitbucket.org/digi-sense/gg-core/gg_events"
+	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-core/gg_scheduler"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
@@ -13,11 +14,12 @@ import (
 )
 
 type DataMoverJob struct {
-	isDebug bool
-	root    string
-	logger  *gg_log.Logger
-	globals *datamover_globals.Globals
-	events  *gg_events.Emitter
+	isDebug     bool
+	root        string
+	logger      *gg_log.Logger
+	globals     *datamover_globals.Globals
+	events      *gg_events.Emitter
+	fnVarEngine *gg_fnvars.FnVarsEngine
 
 	name         string
 	settings     *datamover_commons.DataMoverSettingsJob
@@ -25,12 +27,13 @@ type DataMoverJob struct {
 	_transaction *action.DataMoverTransaction
 }
 
-func NewDataMoverJob(debug bool, root string, events *gg_events.Emitter, globals *datamover_globals.Globals) (instance *DataMoverJob, err error) {
+func NewDataMoverJob(debug bool, root string, events *gg_events.Emitter, fnVarEngine *gg_fnvars.FnVarsEngine, globals *datamover_globals.Globals) (instance *DataMoverJob, err error) {
 	instance = new(DataMoverJob)
 	instance.isDebug = debug
 	instance.root = root
 	instance.globals = globals
 	instance.events = events
+	instance.fnVarEngine = fnVarEngine
 
 	err = instance.init()
 	if nil == err {
@@ -172,7 +175,7 @@ func (instance *DataMoverJob) transaction() (*action.DataMoverTransaction, error
 	if nil == instance._transaction {
 		if nil != instance.settings {
 			instance._transaction, err = action.NewDataMoverTransaction(instance.root, instance.logger,
-				instance.events, instance.settings.Transaction, instance.settings.Variables, instance.globals)
+				instance.events, instance.fnVarEngine, instance.settings.Transaction, instance.settings.Variables, instance.globals)
 		} else {
 			return nil, gg.Errors.Prefix(datamover_commons.PanicSystemError,
 				fmt.Sprintf("Misconfiguration in JOB '%s' settings", instance.name))

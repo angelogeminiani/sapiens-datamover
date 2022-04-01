@@ -3,6 +3,7 @@ package datamover_network
 import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-core/gg_events"
+	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs/action"
@@ -12,9 +13,10 @@ import (
 )
 
 type DataMoverNetworkController struct {
-	mode   string
-	logger *datamover_commons.Logger
-	events *gg_events.Emitter
+	mode        string
+	logger      *datamover_commons.Logger
+	events      *gg_events.Emitter
+	fnVarEngine *gg_fnvars.FnVarsEngine
 
 	enabled       bool
 	closed        bool
@@ -23,13 +25,14 @@ type DataMoverNetworkController struct {
 	services      []services.NetworkService
 }
 
-func NewDataMoverNetworkController(mode string, logger *datamover_commons.Logger, events *gg_events.Emitter) (instance *DataMoverNetworkController, err error) {
+func NewDataMoverNetworkController(mode string, logger *datamover_commons.Logger, events *gg_events.Emitter, fnVarEngine *gg_fnvars.FnVarsEngine) (instance *DataMoverNetworkController, err error) {
 	instance = new(DataMoverNetworkController)
 	instance.mode = mode
 	instance.enabled = false
 	instance.closed = false
 	instance.logger = logger
 	instance.events = events
+	instance.fnVarEngine = fnVarEngine
 
 	err = instance.init(mode)
 	if nil == err {
@@ -113,10 +116,11 @@ func (instance *DataMoverNetworkController) init(mode string) error {
 
 func (instance *DataMoverNetworkController) initServices() error {
 	if nil != instance && instance.enabled {
+		handlers := services.NewDataMoverHandlers(instance.settings.Handlers, instance.logger, instance.fnVarEngine)
 		for _, service := range instance.settings.Services {
 			if service.Enabled {
 				s, e := services.BuildNetworkService(service.Name, service.Protocol,
-					service.ProtocolConfiguration, instance.logger)
+					service.ProtocolConfiguration, handlers, instance.logger)
 				if nil != e {
 					return e
 				}

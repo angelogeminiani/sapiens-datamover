@@ -66,5 +66,11 @@
     }
   ],
   "handlers": [
+    {
+      "enabled": false,
+      "method": "all",
+      "endpoint": "/api/v1/execute",
+      "handler": "./scripts/execute.js"
+    }
   ]
 }

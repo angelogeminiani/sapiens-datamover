@@ -8,7 +8,7 @@ import (
 )
 
 type Globals struct {
-	settings *DataMoverGlobalsSettings
+	Settings *DataMoverGlobalsSettings `json:"settings"`
 }
 
 func NewGlobals(mode string) (instance *Globals) {
@@ -23,27 +23,31 @@ func NewGlobals(mode string) (instance *Globals) {
 //	p u b l i c
 // ---------------------------------------------------------------------------------------------------------------------
 
+func (instance *Globals) String() string {
+	return gg.JSON.Stringify(&instance)
+}
+
 func (instance *Globals) LoadJson(json string) {
-	instance.settings = new(DataMoverGlobalsSettings)
-	_ = gg.JSON.Read(json, instance.settings)
+	instance.Settings = new(DataMoverGlobalsSettings)
+	_ = gg.JSON.Read(json, instance.Settings)
 }
 
 func (instance *Globals) Clone() *Globals {
 	clone := new(Globals)
-	clone.LoadJson(instance.settings.String())
+	clone.LoadJson(instance.Settings.String())
 	return clone
 }
 
 func (instance *Globals) HasConnections() bool {
-	if nil != instance && nil != instance.settings {
-		return len(instance.settings.Connections) > 0
+	if nil != instance && nil != instance.Settings {
+		return len(instance.Settings.Connections) > 0
 	}
 	return false
 }
 
 func (instance *Globals) GetConnection(id string) *datamover_commons.DataMoverConnectionSettings {
-	if nil != instance && nil != instance.settings {
-		for _, conn := range instance.settings.Connections {
+	if nil != instance && nil != instance.Settings {
+		for _, conn := range instance.Settings.Connections {
 			if strings.ToLower(id) == strings.ToLower(conn.ConnectionsId) {
 				return conn
 			}
@@ -53,10 +57,10 @@ func (instance *Globals) GetConnection(id string) *datamover_commons.DataMoverCo
 }
 
 func (instance *Globals) MergeVariables(variables map[string]interface{}) map[string]interface{} {
-	if nil != instance && nil != instance.settings {
-		if len(instance.settings.Constants) > 0 {
+	if nil != instance && nil != instance.Settings {
+		if len(instance.Settings.Constants) > 0 {
 			// add constants to variables
-			return gg.Maps.Merge(false, variables, instance.settings.Constants)
+			return gg.Maps.Merge(false, variables, instance.Settings.Constants)
 		}
 	}
 	return variables
@@ -69,9 +73,9 @@ func (instance *Globals) MergeVariables(variables map[string]interface{}) map[st
 func (instance *Globals) init(mode string) {
 	filename := gg.Paths.WorkspacePath(fmt.Sprintf("globals.%s.json", mode))
 	if ok, _ := gg.Paths.Exists(filename); ok {
-		_ = gg.JSON.ReadFromFile(filename, &instance.settings)
+		_ = gg.JSON.ReadFromFile(filename, &instance.Settings)
 	}
-	if nil == instance.settings {
-		instance.settings = new(DataMoverGlobalsSettings)
+	if nil == instance.Settings {
+		instance.Settings = new(DataMoverGlobalsSettings)
 	}
 }

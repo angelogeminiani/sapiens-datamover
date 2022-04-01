@@ -72,7 +72,11 @@ func (instance *ClientHttp) Send(payload string) (rawMessage interface{}, err er
 			rawMessage = nil
 			return
 		} else {
-			rawMessage = m["response"]
+			if mm, ok := m["response"]; ok {
+				rawMessage = mm
+			} else {
+				rawMessage = resp.Body // raw response from external webserver
+			}
 		}
 	}
 	return

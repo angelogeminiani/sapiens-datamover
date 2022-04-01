@@ -7,11 +7,13 @@ import (
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/services/webserver"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/valyala/fasthttp"
 	"strings"
 )
 
 type ServiceHttp struct {
 	name     string
+	handlers *DataMoverHandlers
 	logger   *datamover_commons.Logger
 	uid      string
 	enabled  bool
@@ -22,9 +24,10 @@ type ServiceHttp struct {
 	server   *webserver.WebController
 }
 
-func NewServiceHttp(name string, configuration map[string]interface{}, logger *datamover_commons.Logger) (instance *ServiceHttp, err error) {
+func NewServiceHttp(name string, configuration map[string]interface{}, handlers *DataMoverHandlers, logger *datamover_commons.Logger) (instance *ServiceHttp, err error) {
 	instance = new(ServiceHttp)
 	instance.name = name
+	instance.handlers = handlers
 	instance.logger = logger
 
 	err = instance.init(configuration)
@@ -103,24 +106,36 @@ func (instance *ServiceHttp) handle(ctx *fiber.Ctx) error {
 	url := string(ctx.Request().URI().Path()) // /api/v1
 
 	params := webserver.Params(ctx, true)
-	if len(params) > 0 {
-		if nm, err := toNetworkMessage(params); nil == err && nil != instance.callback {
-			if nil != nm && len(nm.Body) > 0 {
-				// handled
-				response := instance.callback(nm)
-				if e, b := response.(error); b {
-					return webserver.WriteResponse(ctx, nil, e)
-				} else {
-					return webserver.WriteResponse(ctx, response, nil)
+
+	// check if is there any handler
+	if _, ok := instance.handlers.CanHandle(method, url); ok {
+		// clean params
+		args := createScriptParams(ctx.Request().URI(), params)
+		response, err := instance.handlers.Handle(method, url, args)
+		if nil != err {
+			return webserver.WriteResponse(ctx, nil, err)
+		}
+		return webserver.WriteResponse(ctx, response, nil)
+	} else {
+		// validate native message
+		if len(params) > 0 {
+			if nm, err := toNetworkMessage(params); nil == err && nil != instance.callback {
+				if nil != nm && len(nm.Body) > 0 {
+					// handled
+					response := instance.callback(nm)
+					if e, b := response.(error); b {
+						return webserver.WriteResponse(ctx, nil, e)
+					} else {
+						return webserver.WriteResponse(ctx, response, nil)
+					}
 				}
 			}
 		}
-
 	}
-	// check for handlers
-	fmt.Println(method, url)
 
-	return nil
+	// unhandled
+	return webserver.WriteResponse(ctx, nil, gg.Errors.Prefix(datamover_commons.PanicSystemError,
+		fmt.Sprintf("No handlers for '%s'", url)))
 }
 
 func toNetworkMessage(data interface{}) (response *message.NetworkMessage, err error) {
@@ -130,5 +145,62 @@ func toNetworkMessage(data interface{}) (response *message.NetworkMessage, err e
 
 func toNetworkMessagePayload(data interface{}) (response *message.NetworkMessagePayload, err error) {
 	err = gg.JSON.Read(gg.Convert.ToString(data), &response)
+	return
+}
+
+func createScriptParams(uri *fasthttp.URI, params map[string]interface{}) (response map[string]interface{}) {
+	response = make(map[string]interface{})
+
+	// add uri params
+	query := uri.QueryArgs()
+	if nil != query {
+		for k, v := range params {
+			if query.Has(k) {
+				response[k] = v
+			}
+		}
+	}
+
+	// add message params if any (only for native messages)
+	if nm, err := toNetworkMessage(params); nil == err {
+		if payload, err := toNetworkMessagePayload(nm.Body); nil == err {
+			// variables
+			if len(payload.ActionContextVariables) > 0 {
+				gg.Maps.Merge(false, response, payload.ActionContextVariables)
+			}
+
+			// globals
+			globals := payload.ActionGlobals
+
+			// database
+			config := payload.ActionConfig
+			if nil != config && len(config.Command) > 0 && nil != config.Connection {
+				// replace config with globals if existing
+				if len(config.Connection.ConnectionsId) > 0 && nil != globals && globals.HasConnections() {
+					// replace with global connection
+					conn := globals.GetConnection(config.Connection.ConnectionsId)
+					if nil != conn {
+						config.Connection = conn
+					}
+				}
+				mconn := map[string]interface{}{
+					"command": config.Command,
+					"schema":  config.FieldsMapping,
+					"connection": map[string]interface{}{
+						"driver": config.Connection.Driver,
+						"dsn":    config.Connection.Dsn,
+					},
+				}
+
+				response["database"] = mconn
+			}
+
+			// data (contextData)
+			if len(payload.ActionContextData) > 0 {
+				response["data"] = payload.ActionContextData
+			}
+		}
+	}
+
 	return
 }

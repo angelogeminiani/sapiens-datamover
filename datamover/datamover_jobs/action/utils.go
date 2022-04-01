@@ -90,6 +90,20 @@ func QueryGetNamedArgs(command string, context map[string]interface{}) []interfa
 	return args
 }
 
+func PreProcessSpecials(command string, context map[string]interface{}) string {
+	specials := getParamNames(command, "@@")
+	if len(specials) > 0 {
+		// replace
+		for _, special := range specials {
+			if v, ok := context[special]; ok {
+				value := toSQLString(v)
+				command = strings.ReplaceAll(command, "@@"+special, value)
+			}
+		}
+	}
+	return command
+}
+
 func toSQLString(v interface{}) string {
 	if nil == v {
 		return "NULL"
@@ -129,7 +143,7 @@ func query(db *gorm.DB, command string, context map[string]interface{}) ([]map[s
 	result := make([]map[string]interface{}, 0)
 
 	// preprocess for @@variables
-	command = preProcessSpecials(command, context)
+	command = PreProcessSpecials(command, context)
 
 	// get args
 	args := QueryGetNamedArgs(command, context)
@@ -143,18 +157,4 @@ func query(db *gorm.DB, command string, context map[string]interface{}) ([]map[s
 			command))
 	}
 	return result, nil
-}
-
-func preProcessSpecials(command string, context map[string]interface{}) string {
-	specials := getParamNames(command, "@@")
-	if len(specials) > 0 {
-		// replace
-		for _, special := range specials {
-			if v, ok := context[special]; ok {
-				value := toSQLString(v)
-				command = strings.ReplaceAll(command, "@@"+special, value)
-			}
-		}
-	}
-	return command
 }

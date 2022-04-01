@@ -11,22 +11,23 @@ import (
 )
 
 type DataMoverTransaction struct {
-	root      string
-	logger    *gg_log.Logger
-	events    *gg_events.Emitter
-	settings  []*datamover_commons.DataMoverActionSettings
-	variables map[string]interface{}
-	globals   *datamover_globals.Globals
-
+	root        string
+	logger      *gg_log.Logger
+	events      *gg_events.Emitter
 	fnVarEngine *gg_fnvars.FnVarsEngine
+	settings    []*datamover_commons.DataMoverActionSettings
+	variables   map[string]interface{}
+	globals     *datamover_globals.Globals
+
 	transaction []*DataMoverAction
 }
 
-func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, settings []*datamover_commons.DataMoverActionSettings, variables map[string]interface{}, globals *datamover_globals.Globals) (instance *DataMoverTransaction, err error) {
+func NewDataMoverTransaction(root string, logger *gg_log.Logger, events *gg_events.Emitter, fnVarEngine *gg_fnvars.FnVarsEngine, settings []*datamover_commons.DataMoverActionSettings, variables map[string]interface{}, globals *datamover_globals.Globals) (instance *DataMoverTransaction, err error) {
 	instance = new(DataMoverTransaction)
 	instance.root = root
 	instance.logger = logger
 	instance.events = events
+	instance.fnVarEngine = fnVarEngine
 	instance.settings = settings
 	instance.variables = variables
 	instance.globals = globals
@@ -73,8 +74,6 @@ func (instance *DataMoverTransaction) Execute(contextData []map[string]interface
 // ---------------------------------------------------------------------------------------------------------------------
 
 func (instance *DataMoverTransaction) init() error {
-	instance.fnVarEngine = gg.FnVars.NewEngine()
-
 	if nil != instance.settings {
 		for _, setting := range instance.settings {
 			err := setting.ScriptsLoad(instance.root)

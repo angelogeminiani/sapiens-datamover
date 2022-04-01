@@ -36,6 +36,26 @@ func NewScriptController(root string) (instance *ScriptController) {
 //	p u b l i c
 // ---------------------------------------------------------------------------------------------------------------------
 
+func (instance *ScriptController) Run(name, script string, params map[string]interface{}) (response interface{}, err error) {
+	if len(script) == 0 {
+		return
+	}
+
+	data := make([]map[string]interface{}, 0)
+	variables := make(map[string]interface{})
+	// logger
+	loggerFilename := gg.Paths.Concat(instance.root, fmt.Sprintf("%s.log", name))
+	_ = gg.IO.Remove(loggerFilename)
+	logger := gg_log.NewLogger()
+	logger.SetFileName(loggerFilename)
+
+	env := environment(fmt.Sprintf("%s#%s", instance.dir, name), script, data, variables)
+	env.Context["$params"] = params
+	env.Logger = logger
+
+	return ggx.Scripting.Run(env)
+}
+
 func (instance *ScriptController) RunWithArray(name, script string, contextData []map[string]interface{}, contextVariables map[string]interface{}) (data []map[string]interface{}, variables map[string]interface{}) {
 	data = contextData
 	variables = contextVariables

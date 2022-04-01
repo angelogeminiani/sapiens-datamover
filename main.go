@@ -15,12 +15,14 @@ import (
 	"os"
 )
 
+const AppName = datamover_commons.AppName
+
 func main() {
 	// PANIC RECOVERY
 	defer func() {
 		if r := recover(); r != nil {
 			// recovered from panic
-			message := gg.Strings.Format("[panic] APPLICATION '%s' ERROR: %s", datamover_commons.AppName, r)
+			message := gg.Strings.Format("[panic] APPLICATION '%s' ERROR: %s", AppName, r)
 			log.Fatalf(message)
 		}
 	}()

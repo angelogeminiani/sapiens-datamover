@@ -3,6 +3,7 @@ package datamover
 import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-core/gg_events"
+	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_initializer"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_jobs"
@@ -23,6 +24,7 @@ type DataMover struct {
 	stopChan    chan bool
 	stopMonitor *stopMonitor
 	events      *gg_events.Emitter
+	fnVarEngine *gg_fnvars.FnVarsEngine
 
 	jobs    *datamover_jobs.DataMoverJobsController
 	postman *datamover_postman.DataMoverPostman
@@ -131,6 +133,8 @@ func LaunchApplication(mode, cmdStop string, args ...interface{}) (instance *Dat
 		instance.stopMonitor = newStopMonitor([]string{instance.root, instance.dirWork}, cmdStop, instance.events)
 		instance.events.On(datamover_commons.EventOnDoStop, instance.doStop)
 
+		instance.fnVarEngine = gg.FnVars.NewEngine()
+
 		// logger as first parameter
 		l := gg.Arrays.GetAt(args, 0, nil)
 		instance.logger = datamover_commons.NewLogger(mode, l)
@@ -145,14 +149,14 @@ func LaunchApplication(mode, cmdStop string, args ...interface{}) (instance *Dat
 		// JOBS
 		instance.jobs, err = datamover_jobs.NewDataMoverJobsController(
 			mode, instance.settings.PathJobs,
-			instance.logger, instance.events)
+			instance.logger, instance.events, instance.fnVarEngine)
 		if nil != err {
 			goto exit
 		}
 
 		// NETWORK SERVICES
 		instance.network, err = datamover_network.NewDataMoverNetworkController(mode,
-			instance.logger, instance.events)
+			instance.logger, instance.events, instance.fnVarEngine)
 		if nil != err {
 			goto exit
 		}

@@ -3,6 +3,7 @@ package datamover_jobs
 import (
 	"bitbucket.org/digi-sense/gg-core"
 	"bitbucket.org/digi-sense/gg-core/gg_events"
+	"bitbucket.org/digi-sense/gg-core/gg_fnvars"
 	"bitbucket.org/digi-sense/gg-core/gg_utils"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_globals"
@@ -11,22 +12,24 @@ import (
 )
 
 type DataMoverJobsController struct {
-	isDebug bool
-	root    string
-	logger  *datamover_commons.Logger
-	events  *gg_events.Emitter
+	isDebug     bool
+	root        string
+	logger      *datamover_commons.Logger
+	events      *gg_events.Emitter
+	fnVarEngine *gg_fnvars.FnVarsEngine
 
 	closed  bool
 	globals *datamover_globals.Globals
 	jobs    []*DataMoverJob
 }
 
-func NewDataMoverJobsController(mode string, root string, logger *datamover_commons.Logger, events *gg_events.Emitter) (instance *DataMoverJobsController, err error) {
+func NewDataMoverJobsController(mode string, root string, logger *datamover_commons.Logger, events *gg_events.Emitter, fnVarEngine *gg_fnvars.FnVarsEngine) (instance *DataMoverJobsController, err error) {
 	instance = new(DataMoverJobsController)
 	instance.isDebug = mode == "debug"
 	instance.root = gg.Paths.WorkspacePath(root)
 	instance.logger = logger
 	instance.events = events
+	instance.fnVarEngine = fnVarEngine
 	instance.closed = true
 
 	err = instance.init(mode)
@@ -98,7 +101,7 @@ func (instance *DataMoverJobsController) init(mode string) (err error) {
 	dirs, err = gg.Paths.ListDir(instance.root)
 	if nil == err {
 		for _, dir := range dirs {
-			job, jerr := NewDataMoverJob(instance.isDebug, dir, instance.events, instance.globals)
+			job, jerr := NewDataMoverJob(instance.isDebug, dir, instance.events, instance.fnVarEngine, instance.globals)
 			if nil == jerr {
 				count++
 				instance.logger.Debug(fmt.Sprintf("  * Loaded JOB '%s' (scheduled=%v).", path.Base(dir), job.IsScheduled()))

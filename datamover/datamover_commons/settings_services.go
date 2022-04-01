@@ -6,6 +6,7 @@ type SettingsNet struct {
 	Enabled       bool                      `json:"enabled"`
 	Authorization *SettingsNetAuthorization `json:"authorization"`
 	Services      []*SettingsNetService     `json:"services"`
+	Handlers      []*SettingsNetHandler     `json:"handlers"`
 }
 
 type SettingsNetAuthorization struct {
@@ -26,4 +27,11 @@ type SettingsNetService struct {
 
 type SettingsNetProtocolNio struct {
 	Port int `json:"port"`
+}
+
+type SettingsNetHandler struct {
+	Enabled  bool   `json:"enabled"`
+	Method   string `json:"method"`
+	Endpoint string `json:"endpoint"` // API endpoint
+	Handler  string `json:"handler"`  // relative path to script
 }

@@ -16,12 +16,12 @@ type NetworkService interface {
 	OnNewMessage(callback func(netMessage *message.NetworkMessage) interface{})
 }
 
-func BuildNetworkService(name, protocol string, settings map[string]interface{}, logger *datamover_commons.Logger) (NetworkService, error) {
+func BuildNetworkService(name, protocol string, settings map[string]interface{}, handlers *DataMoverHandlers, logger *datamover_commons.Logger) (NetworkService, error) {
 	switch protocol {
 	case "nio":
-		return NewServiceNio(name, settings, logger)
+		return NewServiceNio(name, settings, handlers, logger)
 	case "http":
-		return NewServiceHttp(name, settings, logger)
+		return NewServiceHttp(name, settings, handlers, logger)
 	}
 	return nil, gg.Errors.Prefix(datamover_commons.PanicSystemError,
 		fmt.Sprintf("protocol '%s' not supported.", protocol))
