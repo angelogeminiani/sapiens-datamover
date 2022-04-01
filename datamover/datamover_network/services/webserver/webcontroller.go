@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"bitbucket.org/digi-sense/gg-core"
-	"bitbucket.org/digi-sense/gg-core/gg_events"
 	"bitbucket.org/digi-sense/gg-core/gg_utils"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"github.com/gofiber/fiber/v2"
@@ -11,24 +10,22 @@ import (
 type WebController struct {
 	root     string
 	logger   *datamover_commons.Logger
-	events   *gg_events.Emitter
 	settings *WebserverSettings
 
 	webserver *Webserver
 	websecure *Websecure
 }
 
-func NewWebController(mode string, logger *datamover_commons.Logger, events *gg_events.Emitter, settings *WebserverSettings) (instance *WebController) {
+func NewWebController(logger *datamover_commons.Logger, settings *WebserverSettings) (instance *WebController) {
 	root := gg.Paths.WorkspacePath("./webserver")
 	_ = gg.Paths.Mkdir(root + gg_utils.OS_PATH_SEPARATOR)
 
 	instance = new(WebController)
 	instance.logger = logger
-	instance.events = events
 	instance.root = root
 	instance.settings = settings
 
-	instance.init(mode, root)
+	instance.init(root)
 
 	return instance
 }
@@ -73,11 +70,11 @@ func (instance *WebController) RegisterNoAuth(method, endpoint, command string) 
 //	p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *WebController) init(mode, root string) {
+func (instance *WebController) init(root string) {
 
-	instance.webserver = NewWebserver("webserver", mode, root)
+	instance.webserver = NewWebserver(root, instance.settings)
 	if nil != instance.webserver {
-		instance.websecure = NewWebsecure(mode, instance.webserver.HttpAuth())
+		// instance.websecure = NewWebsecure(mode, instance.webserver.HttpAuth())
 
 		// API SYS
 		instance.webserver.Handle("get", ApiSysVersion, instance.onSysVersion)

@@ -102,7 +102,8 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 			}
 			// deserialize
 			var res *message.NetworkMessageResponseBody
-			err = gg.JSON.Read(gg.Convert.ToString(respData), &res)
+			str := gg.Convert.ToString(respData)
+			err = gg.JSON.Read(str, &res)
 			if nil == err {
 				// align datasets
 				if nil != res.Datasets && len(res.Datasets) > 0 {
@@ -152,13 +153,8 @@ func (instance *DataMoverAction) initNetwork() (err error) {
 
 func (instance *DataMoverAction) getClientNet() (clients.ClientNetwork, error) {
 	if instance.IsNetworkAction() && nil == instance._clientNet {
-		uri, err := instance.actionSettings.Network.Uri()
-		if nil != err {
-			instance._clientNet = nil
-			return instance._clientNet, err
-		}
-		c, e := clients.BuildNetworkClient(uri,
-			instance.actionSettings.Network)
+		host := instance.actionSettings.Network.Host
+		c, e := clients.BuildNetworkClient(host, instance.actionSettings.Network)
 		if nil != e {
 			instance._clientNet = nil
 			return instance._clientNet, e

@@ -45,9 +45,8 @@ func (instance *ClientNio) Send(payload string) (interface{}, error) {
 	// send packet message
 	client.Secure = instance.secure
 	resp, e := client.Send(instance.buildMessage(payload))
-	rawMessage := resp.Body
 
-	return rawMessage, e
+	return resp.Body, e
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -77,8 +76,8 @@ func (instance *ClientNio) onConnect(e *gg_events.Event) {
 }
 
 func (instance *ClientNio) buildMessage(payload string) *message.NetworkMessage {
-	message := new(message.NetworkMessage)
-	message.SetAuthorization(instance.auth.Value)
-	message.Body = payload
-	return message
+	response := new(message.NetworkMessage)
+	response.SetAuthorization(instance.auth.Value)
+	response.Body = payload
+	return response
 }

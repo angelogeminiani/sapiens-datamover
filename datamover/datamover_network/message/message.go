@@ -30,6 +30,10 @@ func (instance *NetworkMessage) GetAuthorization() string {
 	return gg.Convert.ToString(instance.GetHeader()["Authorization"])
 }
 
+func (instance *NetworkMessage) SetHeader(key, value string) {
+	instance.GetHeader()[key] = value
+}
+
 type NetworkMessagePayload struct {
 	ActionName             string                                     `json:"name"`
 	ActionRoot             string                                     `json:"root"`

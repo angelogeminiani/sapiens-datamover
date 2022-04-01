@@ -2,12 +2,17 @@ package services
 
 import (
 	"bitbucket.org/digi-sense/gg-core"
+	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/message"
 	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_network/services/webserver"
+	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"strings"
 )
 
 type ServiceHttp struct {
 	name     string
+	logger   *datamover_commons.Logger
 	uid      string
 	enabled  bool
 	closed   bool
@@ -17,9 +22,10 @@ type ServiceHttp struct {
 	server   *webserver.WebController
 }
 
-func NewServiceHttp(name string, configuration map[string]interface{}) (instance *ServiceHttp, err error) {
+func NewServiceHttp(name string, configuration map[string]interface{}, logger *datamover_commons.Logger) (instance *ServiceHttp, err error) {
 	instance = new(ServiceHttp)
 	instance.name = name
+	instance.logger = logger
 
 	err = instance.init(configuration)
 	return
@@ -86,7 +92,43 @@ func (instance *ServiceHttp) init(configuration map[string]interface{}) (err err
 	instance.settings.Auth = nil
 	instance.settings.Http = configuration
 
-	// instance.server = webserver.NewWebController()
+	instance.server = webserver.NewWebController(instance.logger, instance.settings)
+	instance.server.Handle("all", "*", instance.handle)
 
+	return
+}
+
+func (instance *ServiceHttp) handle(ctx *fiber.Ctx) error {
+	method := strings.ToLower(ctx.Method())
+	url := string(ctx.Request().URI().Path()) // /api/v1
+
+	params := webserver.Params(ctx, true)
+	if len(params) > 0 {
+		if nm, err := toNetworkMessage(params); nil == err && nil != instance.callback {
+			if nil != nm && len(nm.Body) > 0 {
+				// handled
+				response := instance.callback(nm)
+				if e, b := response.(error); b {
+					return webserver.WriteResponse(ctx, nil, e)
+				} else {
+					return webserver.WriteResponse(ctx, response, nil)
+				}
+			}
+		}
+
+	}
+	// check for handlers
+	fmt.Println(method, url)
+
+	return nil
+}
+
+func toNetworkMessage(data interface{}) (response *message.NetworkMessage, err error) {
+	err = gg.JSON.Read(gg.Convert.ToString(data), &response)
+	return
+}
+
+func toNetworkMessagePayload(data interface{}) (response *message.NetworkMessagePayload, err error) {
+	err = gg.JSON.Read(gg.Convert.ToString(data), &response)
 	return
 }

@@ -1,5 +1,7 @@
 package datamover_commons
 
+import "fmt"
+
 type SettingsNet struct {
 	Enabled       bool                      `json:"enabled"`
 	Authorization *SettingsNetAuthorization `json:"authorization"`
@@ -9,6 +11,10 @@ type SettingsNet struct {
 type SettingsNetAuthorization struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
+}
+
+func (instance *SettingsNetAuthorization) String() string {
+	return fmt.Sprintf("%s %s", instance.Type, instance.Value)
 }
 
 type SettingsNetService struct {

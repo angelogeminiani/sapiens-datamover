@@ -115,7 +115,8 @@ func (instance *DataMoverNetworkController) initServices() error {
 	if nil != instance && instance.enabled {
 		for _, service := range instance.settings.Services {
 			if service.Enabled {
-				s, e := services.BuildNetworkService(service.Name, service.Protocol, service.ProtocolConfiguration)
+				s, e := services.BuildNetworkService(service.Name, service.Protocol,
+					service.ProtocolConfiguration, instance.logger)
 				if nil != e {
 					return e
 				}
@@ -128,6 +129,9 @@ func (instance *DataMoverNetworkController) initServices() error {
 }
 
 func (instance *DataMoverNetworkController) handleMessage(networkMessage *message.NetworkMessage) interface{} {
+	if nil == networkMessage || len(networkMessage.Body) == 0 {
+		return gg.Errors.Prefix(datamover_commons.PanicSystemError, "Empty Message is not allowed!")
+	}
 	authData := networkMessage.GetAuthorization()
 	if len(authData) > 0 && nil != instance.authenticator {
 		if !instance.authenticator.Validate(authData) {

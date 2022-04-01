@@ -16,8 +16,6 @@ import (
 // ---------------------------------------------------------------------------------------------------------------------
 
 type Webserver struct {
-	name        string
-	mode        string
 	dirWork     string // workspace
 	initialized bool
 	enabled     bool
@@ -30,15 +28,13 @@ type Webserver struct {
 	httpsAddr      string
 }
 
-func NewWebserver(name, mode string, httpRoot string) *Webserver {
+func NewWebserver(httpRoot string, settings *WebserverSettings) *Webserver {
 	instance := new(Webserver)
-	instance.name = name
-	instance.mode = mode
 	instance.dirWork = gg.Paths.WorkspacePath("./")
 	instance.httpRoot = httpRoot
 	instance.enabled = false
 
-	_ = instance.init(name, mode)
+	_ = instance.init(settings)
 
 	return instance
 }
@@ -166,14 +162,11 @@ func (instance *Webserver) Exit() {
 //		p r i v a t e
 // ---------------------------------------------------------------------------------------------------------------------
 
-func (instance *Webserver) init(name, mode string) (err error) {
+func (instance *Webserver) init(settings *WebserverSettings) (err error) {
 	if !instance.initialized {
 		instance.initialized = true
 
-		// search for configuration file
-		var settings *WebserverSettings
-		settings, err = loadSettings(name, mode)
-		if nil == err {
+		if nil != settings {
 			instance.settings = settings
 			instance.enabled = settings.Enabled
 			if instance.enabled {
@@ -262,19 +255,4 @@ func (instance *Webserver) mkDir(path string) {
 	} else {
 		_ = gg.Paths.Mkdir(gg.Paths.Concat(instance.httpRoot, path))
 	}
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-//		S T A T I C
-// ---------------------------------------------------------------------------------------------------------------------
-
-func loadSettings(name, mode string) (*WebserverSettings, error) {
-	path := gg.Paths.WorkspacePath(name + "." + mode + ".json")
-	settings := new(WebserverSettings)
-	text, err := gg.IO.ReadTextFromFile(path)
-	if nil != err {
-		return settings, err
-	}
-	err = gg.JSON.Read(text, &settings)
-	return settings, err
 }
