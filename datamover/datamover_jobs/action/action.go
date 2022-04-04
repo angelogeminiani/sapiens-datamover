@@ -78,7 +78,9 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 	result = make([]map[string]interface{}, 0)
 
 	if instance.IsNetworkAction() {
+		// ------------------------
 		// REMOTE
+		// ------------------------
 		client, e := instance.getClientNet()
 		if nil != client {
 			payload := new(message.NetworkMessagePayload)
@@ -90,6 +92,9 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 			payload.ActionContextVariables = variables
 			payload.ActionGlobals = instance.globals
 			payload.ActionDatasets = LoadJsDatasets(instance.root) // load datasets for remote transfer
+
+			// check again scripts are loaded
+			_ = payload.ActionConfig.ScriptsLoad(instance.root)
 
 			// execute
 			respData, respErr := client.Send(payload.String())
@@ -122,7 +127,7 @@ func (instance *DataMoverAction) Execute(contextData []map[string]interface{}, v
 		command := instance.actionSettings.Command
 		if len(command) > 0 {
 			mapping := instance.actionSettings.FieldsMapping
-			result, err = instance.datasource.GetData(command, mapping, contextData, instance.globals.MergeVariables(variables))
+			result, err = instance.datasource.GetData(command, mapping, contextData, instance.globals.InjectConstantsIntoVariables(variables))
 		}
 	}
 

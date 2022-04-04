@@ -14,7 +14,11 @@ type Globals struct {
 func NewGlobals(mode string) (instance *Globals) {
 	instance = new(Globals)
 
-	instance.init(mode)
+	if len(mode) > 0 {
+		instance.init(mode)
+	}
+
+	instance.notNull()
 
 	return
 }
@@ -56,7 +60,7 @@ func (instance *Globals) GetConnection(id string) *datamover_commons.DataMoverCo
 	return nil
 }
 
-func (instance *Globals) MergeVariables(variables map[string]interface{}) map[string]interface{} {
+func (instance *Globals) InjectConstantsIntoVariables(variables map[string]interface{}) map[string]interface{} {
 	if nil != instance && nil != instance.Settings {
 		if len(instance.Settings.Constants) > 0 {
 			// add constants to variables
@@ -64,6 +68,32 @@ func (instance *Globals) MergeVariables(variables map[string]interface{}) map[st
 		}
 	}
 	return variables
+}
+
+func (instance *Globals) MergeWith(source *Globals, overwrite bool) {
+	if nil != instance && nil != source {
+		// null safety control
+		instance.notNull()
+
+		// connections
+		if nil != source.Settings.Connections && len(source.Settings.Connections) > 0 {
+			if overwrite {
+				instance.Settings.Connections = make([]*datamover_commons.DataMoverConnectionSettings, 0)
+				instance.Settings.Connections = append(instance.Settings.Connections, source.Settings.Connections...)
+			} else {
+				for _, connection := range source.Settings.Connections {
+					if nil == instance.GetConnection(connection.ConnectionsId) {
+						instance.Settings.Connections = append(instance.Settings.Connections, connection)
+					}
+				}
+			}
+		}
+
+		// constants
+		if nil != source.Settings.Constants && len(source.Settings.Constants) > 0 {
+			gg.Maps.Merge(overwrite, instance.Settings.Constants, source.Settings.Constants)
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -75,7 +105,16 @@ func (instance *Globals) init(mode string) {
 	if ok, _ := gg.Paths.Exists(filename); ok {
 		_ = gg.JSON.ReadFromFile(filename, &instance.Settings)
 	}
+}
+
+func (instance *Globals) notNull() {
 	if nil == instance.Settings {
 		instance.Settings = new(DataMoverGlobalsSettings)
+	}
+	if nil == instance.Settings.Constants {
+		instance.Settings.Constants = make(map[string]interface{})
+	}
+	if nil == instance.Settings.Connections {
+		instance.Settings.Connections = make([]*datamover_commons.DataMoverConnectionSettings, 0)
 	}
 }

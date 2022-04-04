@@ -164,19 +164,31 @@ func (instance *DataMoverNetworkController) executeAction(payload *message.Netwo
 	globals := payload.ActionGlobals
 	datasets := payload.ActionDatasets
 
+	if nil == settings {
+		// missing required data
+		response = gg.Errors.Prefix(datamover_commons.PanicSystemError, "Missing required settings for task execution.")
+		return
+	}
+
+	if nil == globals {
+		globals = datamover_globals.NewGlobals("") // empty globals. NULL SAFETY CONTROL
+	}
+
 	// align datasets
 	if len(datasets) > 0 {
 		action.OverwriteJsDatasets(root, datasets)
 	}
+
+	// check if we need to load a server script
+	_ = settings.ScriptsLoad(root)
 	// remove network setting to avoid remote execution
 	settings.Network = nil
 
 	// check local globals
 	// remote globals are used only if locally there are no globals
 	locGlobals := datamover_globals.NewGlobals(instance.mode)
-	if nil == globals || (nil != locGlobals && locGlobals.HasConnections()) {
-		// load globals from local
-		globals = locGlobals
+	if nil != locGlobals {
+		globals.MergeWith(locGlobals, true)
 	}
 
 	// execute the remote command
