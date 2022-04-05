@@ -21,6 +21,7 @@ type DataMoverDatasource struct {
 	scriptContext      string
 	scriptBefore       string
 	scriptAfter        string
+	initialized        bool
 
 	_db          *gorm.DB
 	schema       *schema.DataMoverDatasourceSchema
@@ -43,9 +44,10 @@ func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine,
 		instance.scriptContext = scripts.Context
 		instance.scriptAfter = scripts.After
 	}
-	err := instance.init()
 
-	return instance, err
+	// err := instance.init()
+
+	return instance, nil
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -54,6 +56,7 @@ func NewDataMoverDatasource(root string, fnVarEngine *gg_fnvars.FnVarsEngine,
 
 func (instance *DataMoverDatasource) GetSchema() *schema.DataMoverDatasourceSchema {
 	if nil != instance {
+		_ = instance.init() // late initialize
 		return instance.schema
 	}
 	return nil
@@ -61,6 +64,11 @@ func (instance *DataMoverDatasource) GetSchema() *schema.DataMoverDatasourceSche
 
 func (instance *DataMoverDatasource) GetData(command string, fieldsMapping map[string]interface{}, context []map[string]interface{}, variables map[string]interface{}) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
+
+	initErr := instance.init() // late initialize
+	if nil != initErr {
+		return nil, initErr
+	}
 
 	db, err := instance.connection()
 	if nil != err {
@@ -146,16 +154,18 @@ func (instance *DataMoverDatasource) GetData(command string, fieldsMapping map[s
 // ---------------------------------------------------------------------------------------------------------------------
 
 // initialize the schema, network, etc...
-func (instance *DataMoverDatasource) init() error {
-	if nil != instance {
-		err := instance.initSchema()
+func (instance *DataMoverDatasource) init() (err error) {
+	if nil != instance && !instance.initialized {
+
+		err = instance.initSchema()
 		if nil != err {
 			return err
 		}
-
 		instance.scriptEngine = scripting.NewScriptController(instance.root)
+
+		instance.initialized = true
 	}
-	return nil
+	return
 }
 
 func (instance *DataMoverDatasource) initSchema() error {

@@ -85,11 +85,14 @@ func (instance *DataMoverTransaction) init() error {
 				return actionErr
 			}
 			instance.transaction = append(instance.transaction, action)
+
 			// debug info about schema
-			schema := action.GetSchema()
-			if nil != schema && instance.logger.GetLevel() == gg_log.LEVEL_DEBUG {
-				filename := gg.Paths.Concat(instance.root, fmt.Sprintf("schema.%s.json", action.uid))
-				_, _ = gg.IO.WriteTextToFile(schema.String(), filename)
+			if instance.logger.GetLevel() == gg_log.LEVEL_DEBUG {
+				schema := action.GetSchema()
+				if nil != schema {
+					filename := gg.Paths.Concat(instance.root, fmt.Sprintf("schema.%s.json", action.uid))
+					_, _ = gg.IO.WriteTextToFile(schema.String(), filename)
+				}
 			}
 		}
 	}
