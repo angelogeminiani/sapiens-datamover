@@ -9,7 +9,7 @@ Data Mover features are:
 - **Multi database**: SQLite, SQL Server, MySQL/MariaDB, Postgres
 - **Auto Migrate Schema**: can migrate/update database schema
 - **Scheduler**: jobs can be scheduled and start every x time or just only once a day at the set time
-- **Move Data from Source to Target database**: this is Data Mover main feature 🐼
+- **Move Data from Source to Target database**: this is Data Mover main feature 
 - **Multi Node Architecture**: Data Mover allow to create a network of remote node for edge execution
 - **Javascript Native Engine**: With javascript you can customize behavior and transform data
 - **HTTP endpoints**: Special endpoints can be enabled to return data or trigger custom webhooks
@@ -55,7 +55,7 @@ If all is working fine you should se a log file in each job directory and also s
 database schema.
 ---------------
 
-### Launch the Panda 🐼 ###
+### Launch the Program  ###
 
 Data Mover support some commands and parameters.
 
@@ -73,9 +73,8 @@ PARAMETERS:
 - `-dir_work`: path of workspace. Can be absolute or relative path
 - `-m`: mode. Can be `debug` or `production`. The `debug` mode is useful if you need a verbose log.
 
-For binary files, please look [here](./_build).
 
-### Stop the Panda 🐼 ###
+### Stop the Program  ###
 
 Data Mover works in background.
 
@@ -232,7 +231,7 @@ INSERT INTO users (...) returning id
 
 This SQL Formula is a custom SQL like command with a special statement: `(...)`
 
-The three-dots-statement 🌿 tells the panda 🐼 of Data Mover to extract all fields and values from the datasource into
+The three-dots-statement 🌿 tells the panda  of Data Mover to extract all fields and values from the datasource into
 context and execute an INSERT for each row in the context.
 
 So Data Mover's panda will start moving row after row into the context to the target database executing an INSERT
@@ -242,7 +241,7 @@ Reassuming:
 
 - First we selected some rows from a datasource
 - then we started a loop on each row and executed and INSERT into a target database. The insert command was
-  auto-completed from the panda 🐼 of Data Mover that is able to understand a three-dot-statement 🌿.
+  auto-completed from the panda  of Data Mover that is able to understand a three-dot-statement 🌿.
 
 Now, to complete the transaction, we should need to mark all source data as exported.
 
@@ -272,17 +271,17 @@ UPDATE users SET exported=true, exported_time='<var>date|iso</var>' WHERE id=@id
 
 In this statement we have two strange things:
 
-- 🌿 `<var>date|iso</var>`: a Special Expression
-- 🌿 `@id`: a named parameter
+ - `<var>date|iso</var>`: a Special Expression
+ - `@id`: a named parameter
 
-Nothing magic, just panda 🐼 style.
+Nothing magic, just panda  style.
 
 Data Mover's panda is also able to interpret some Special Expressions like the one above (that return an ISO-8601 date
 time).
 
 Otherwise, the `@id` named parameter uses the context to get a value for each loop.
 
-That's all. We just wrote three simple ACTIONs and the panda 🐼 did all the job.
+That's all. We just wrote three simple ACTIONs and the panda  did all the job.
 
 ### Connecting to a Database ###
 
@@ -817,8 +816,6 @@ Examples are [HERE](./_docs/examples/).
 
 ## Binaries ##
 
-Download binaries from this repository in [_build](./_build) directory.
-
 Supported OS:
 
 - Windows and Windows64
@@ -828,7 +825,8 @@ Supported OS:
 
 ## MIT License NON-COMMERCIAL USE ##
 
-Data Mover is distributed under MIT license fo non-commercial use. If you use as a tool for your own projects, you can
+Data Mover is distributed under MIT license fo non-commercial use. 
+If you use as a tool for your own projects, you can
 use Data Mover under MIT license.
 
 NON-COMMERCIAL: non-commercial is that no money should be exchanged as part of the transaction of using of the materials
@@ -838,6 +836,5 @@ NON-COMMERCIAL: non-commercial is that no money should be exchanged as part of t
 
 If you are a company that sell projects to its customers and need Data Mover, you should ask for a Commercial License.
 
-For Commercial License, please write to [angelo.geminiani@ggtechnologies.sm](mailto:angelo.geminiani@ggtechnologies.sm)
 
  
