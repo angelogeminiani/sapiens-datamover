@@ -1,4 +1,4 @@
-# Data Mover #
+# Sapiens Data Mover #
 
 ![](./icon_128.png)
 
@@ -18,7 +18,7 @@ Data Mover features are:
 
 ### Introduction ###
 
-🐼 Data Mover works on a specific directory named "datamover_workspace"
+Sapiens Data Mover works on a specific directory named "datamover_workspace"
 (you can change the default name launching the executable with a parameter).
 
 When Data Mover starts, firs of all look for its workspace. If a workspace is not found, Data Mover creates one using the

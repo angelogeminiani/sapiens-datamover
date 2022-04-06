@@ -3,8 +3,8 @@ package main
 import (
 	"bitbucket.org/digi-sense/gg-core"
 	_ "bitbucket.org/digi-sense/gg-core-x"
-	"bitbucket.org/digi-sense/gg-progr-datamover/datamover"
-	"bitbucket.org/digi-sense/gg-progr-datamover/datamover/datamover_commons"
+	"bitbucket.org/digi-sense/gg-progr-datamover/sapiens_datamover"
+	"bitbucket.org/digi-sense/gg-progr-datamover/sapiens_datamover/datamover_commons"
 	"flag"
 	_ "gorm.io/driver/mysql"
 	_ "gorm.io/driver/postgres"
@@ -49,7 +49,7 @@ func main() {
 
 	initialize(dirWork, mode)
 
-	app, err := datamover.LaunchApplication(*mode, *quit)
+	app, err := sapiens_datamover.LaunchApplication(*mode, *quit)
 	if nil == err {
 
 		err = app.Start()
